@@ -1,0 +1,106 @@
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Editors / IDEs ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache/
+*.log
+
+# --- Node / JS (if orchestration tooling lands here) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+dist/
+.next/
+.nuxt/
+.turbo/
+
+# --- Rust (if colocated runtime / shared-memory layer) ---
+target/
+**/*.rs.bk
+
+# --- ML / model artifacts ---
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.bin
+*.gguf
+*.ggml
+*.ckpt
+*.h5
+*.pkl
+*.pickle
+models/
+checkpoints/
+weights/
+runs/
+wandb/
+mlruns/
+.lightning/
+
+# --- Data ---
+data/
+datasets/
+*.parquet
+*.arrow
+*.feather
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+
+# --- Local only (not for remote) ---
+plan.md
