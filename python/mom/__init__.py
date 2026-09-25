@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from mom.directory import ModelDirectory
 from mom.graph import Graph
+from mom.state import StateStore
 
 __version__ = "0.1.0"
 
@@ -28,6 +29,7 @@ __all__ = [
     "Graph",
     "ModelDirectory",
     "NATIVE",
+    "StateStore",
     "__version__",
     "core_version",
     "ping",

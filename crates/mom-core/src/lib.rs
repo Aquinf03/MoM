@@ -6,10 +6,14 @@
 
 #![deny(missing_docs)]
 
+mod state;
+
+pub use state::StateStore;
+
 /// Crate version (kept in sync with the workspace package version).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Placeholder until StateStore / Graph / Scheduler land.
+/// Hot-path liveness check.
 pub fn ping() -> &'static str {
     "mom-core"
 }
