@@ -5,6 +5,7 @@ from __future__ import annotations
 from mom.bus import Bus, Payload
 from mom.directory import ModelDirectory
 from mom.graph import Graph
+from mom.scheduler import RunResult, Scheduler, plan_graph
 from mom.state import StateStore
 
 __version__ = "0.1.0"
@@ -32,8 +33,11 @@ __all__ = [
     "ModelDirectory",
     "NATIVE",
     "Payload",
+    "RunResult",
+    "Scheduler",
     "StateStore",
     "__version__",
     "core_version",
     "ping",
+    "plan_graph",
 ]

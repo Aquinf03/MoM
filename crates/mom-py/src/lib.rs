@@ -24,6 +24,50 @@ fn bus_err(err: mom_core::BusError) -> PyErr {
     PyValueError::new_err(err.to_string())
 }
 
+fn schedule_err(err: impl std::fmt::Display) -> PyErr {
+    PyValueError::new_err(err.to_string())
+}
+
+/// Build an execution plan from a graph dict `{nodes, edges}`.
+///
+/// Returns `{steps: [{type: "run"|"speculate", ...}, ...]}`.
+#[pyfunction]
+fn plan_graph(py: Python<'_>, graph: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+    let v: Value = depythonize(graph)?;
+    let g = mom_core::Graph::from_json(&v).map_err(schedule_err)?;
+    let plan = mom_core::plan(&g).map_err(schedule_err)?;
+    let steps: Vec<Value> = plan
+        .steps
+        .iter()
+        .map(|s| match s {
+            mom_core::Step::Run { node } => serde_json::json!({
+                "type": "run",
+                "node": node,
+            }),
+            mom_core::Step::Speculate { router, prior } => serde_json::json!({
+                "type": "speculate",
+                "router": router,
+                "prior": prior,
+            }),
+        })
+        .collect();
+    let out = serde_json::json!({ "steps": steps });
+    Ok(pythonize(py, &out)?.unbind())
+}
+
+/// Parse router output into a route string (`None` if missing).
+#[pyfunction]
+fn route_from(value: &Bound<'_, PyAny>) -> PyResult<Option<String>> {
+    let v: Value = depythonize(value)?;
+    Ok(mom_core::route_from_value(&v))
+}
+
+/// Whether `route` matches speculative prior name or model id.
+#[pyfunction]
+fn route_matches_prior(route: &str, prior_name: &str, prior_model_id: &str) -> bool {
+    mom_core::route_matches_prior(route, prior_name, prior_model_id)
+}
+
 /// Single-owner shared state — models read/write by key.
 #[pyclass(name = "StateStore")]
 struct PyStateStore {
@@ -230,6 +274,9 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", mom_core::VERSION)?;
     m.add_function(wrap_pyfunction!(core_version, m)?)?;
     m.add_function(wrap_pyfunction!(ping, m)?)?;
+    m.add_function(wrap_pyfunction!(plan_graph, m)?)?;
+    m.add_function(wrap_pyfunction!(route_from, m)?)?;
+    m.add_function(wrap_pyfunction!(route_matches_prior, m)?)?;
     m.add_class::<PyStateStore>()?;
     m.add_class::<PyBus>()?;
     m.add_class::<PyPayload>()?;

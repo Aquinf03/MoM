@@ -7,10 +7,17 @@
 #![deny(missing_docs)]
 
 mod bus;
+mod graph;
+mod schedule;
 mod state;
 
 pub use bus::{
     Bus, BusError, EmbeddingTransport, Payload, PayloadKind, TextJsonTransport, Transport,
+};
+pub use graph::{Edge, EdgeKind, Graph, GraphError, Node};
+pub use schedule::{
+    plan, route_from_value, route_matches_prior, ExecutionPlan, RunMetrics, ScheduleError,
+    SpecResult, Step,
 };
 pub use state::StateStore;
 

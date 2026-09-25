@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from typing import Any, Literal
 
 
 @dataclass
@@ -15,15 +16,19 @@ class Node:
 
 @dataclass
 class Edge:
-    """Directed dependency: `to` waits on `frm`."""
+    """Directed dependency or speculative overlap."""
 
     frm: str
     to: str
+    kind: Literal["depend", "speculate"] = "depend"
+
+    def to_wire(self) -> dict[str, str]:
+        return {"from": self.frm, "to": self.to, "kind": self.kind}
 
 
 @dataclass
 class Graph:
-    """Topology as data. Assemble in Python; execute later via mom-core."""
+    """Topology as data. Assemble in Python; plan/execute via scheduler."""
 
     nodes: list[Node] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
@@ -33,5 +38,22 @@ class Graph:
         return self
 
     def link(self, frm: str, to: str) -> Graph:
-        self.edges.append(Edge(frm=frm, to=to))
+        self.edges.append(Edge(frm=frm, to=to, kind="depend"))
         return self
+
+    def speculate(self, router: str, prior: str) -> Graph:
+        """Start `prior` when `router` starts (route-then-run overlap)."""
+        self.edges.append(Edge(frm=router, to=prior, kind="speculate"))
+        return self
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "nodes": [asdict(n) for n in self.nodes],
+            "edges": [e.to_wire() for e in self.edges],
+        }
+
+    def node(self, name: str) -> Node:
+        for n in self.nodes:
+            if n.name == name:
+                return n
+        raise KeyError(f"unknown node: {name}")
