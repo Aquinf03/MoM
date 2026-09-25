@@ -72,7 +72,7 @@ dist/
 target/
 **/*.rs.bk
 
-# --- ML / model artifacts ---
+# --- ML / model *weights* (adapter code under models/ is tracked) ---
 *.pt
 *.pth
 *.onnx
@@ -84,9 +84,10 @@ target/
 *.h5
 *.pkl
 *.pickle
-models/
 checkpoints/
 weights/
+models/**/weights/
+models/**/checkpoints/
 runs/
 wandb/
 mlruns/

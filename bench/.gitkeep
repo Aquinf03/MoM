@@ -1,0 +1,4 @@
+# Bench harnesses live here — single-model baseline vs MoM compositions.
+# Latency / speculation metrics land once mom-core scheduling exists.
+
+# Placeholder until §6 of plan.md.

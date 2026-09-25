@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = ["crates/mom-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Aquin Labs Private Limited"]
+repository = "https://github.com/aquinlabs/mom"
+
+[workspace.dependencies]
+mom-core = { path = "crates/mom-core" }

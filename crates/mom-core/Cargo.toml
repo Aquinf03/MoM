@@ -1,0 +1,15 @@
+[package]
+name = "mom-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "MoM hot-path runtime: shared state, graph runner, speculative scheduler"
+readme = "../../README.md"
+
+[lib]
+name = "mom_core"
+path = "src/lib.rs"
+
+[dependencies]
+# Bindings (pyo3) land when the Python extension crate is wired up.

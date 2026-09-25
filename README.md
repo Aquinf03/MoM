@@ -51,6 +51,24 @@ one external run()  ← feels like a single model
 
 **Locked for v1:** colocated (in-process / same machine) · text/JSON bus default · prove a demo composition first, then dynamic graph selection · orchestration overhead ≪ natural model variance.
 
+## Layout
+
+```
+crates/mom-core/   Rust hot path (state, scheduler, timing)
+python/mom/        Python package (adapters, directory, graph DSL)
+models/            Drop-in catalog — any model kind registers here
+examples/          Runnable demos
+bench/             Latency / seamlessness harnesses
+```
+
+```bash
+# Python surface (no Rust required yet)
+cd python && pip install -e .
+python ../examples/hello_mom.py
+```
+
+Rust/`maturin` bindings wire up once `cargo` is available — see comments in `python/pyproject.toml`.
+
 ## Hard problems (honest)
 
 **Interface** — Text buses are plug-and-play but pay serialization; embedding buses are fast but break true plug-and-play. Hard tradeoff, not a missing API.
@@ -65,9 +83,9 @@ one external run()  ← feels like a single model
 
 Orchestration overhead smaller than the natural variance of the model calls themselves — functionally invisible, not literally zero.
 
-## Status & plan
+## Status
 
-Early design. Scaffolding only.
+Monorepo scaffolded. Core contracts and speculative runtime still ahead.
 
 ## License
 
