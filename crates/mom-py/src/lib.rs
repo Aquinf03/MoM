@@ -2,8 +2,8 @@
 
 use std::sync::Arc;
 
-use mom_core::StateStore;
-use pyo3::exceptions::PyKeyError;
+use mom_core::{Bus, Payload, StateStore};
+use pyo3::exceptions::{PyKeyError, PyValueError};
 use pyo3::prelude::*;
 use pythonize::{depythonize, pythonize};
 use serde_json::Value;
@@ -18,6 +18,10 @@ fn core_version() -> &'static str {
 #[pyfunction]
 fn ping() -> &'static str {
     mom_core::ping()
+}
+
+fn bus_err(err: mom_core::BusError) -> PyErr {
+    PyValueError::new_err(err.to_string())
 }
 
 /// Single-owner shared state — models read/write by key.
@@ -115,6 +119,111 @@ impl PyStateStore {
     }
 }
 
+/// Hop payload (opaque bytes + kind).
+#[pyclass(name = "Payload")]
+#[derive(Clone)]
+struct PyPayload {
+    inner: Payload,
+}
+
+#[pymethods]
+impl PyPayload {
+    /// Transport kind id (`text_json` | `embedding`).
+    fn kind(&self) -> &'static str {
+        self.inner.kind().as_str()
+    }
+
+    /// Raw body bytes.
+    fn body<'py>(&self, py: Python<'py>) -> Bound<'py, pyo3::types::PyBytes> {
+        pyo3::types::PyBytes::new(py, self.inner.body())
+    }
+
+    /// UTF-8 body when this is a text payload.
+    fn as_text(&self) -> PyResult<String> {
+        self.inner
+            .as_text()
+            .map(str::to_owned)
+            .map_err(bus_err)
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "Payload(kind={}, len={})",
+            self.inner.kind().as_str(),
+            self.inner.body().len()
+        )
+    }
+}
+
+/// Hop bus with a pluggable transport (default: text/JSON).
+#[pyclass(name = "Bus")]
+#[derive(Clone)]
+struct PyBus {
+    inner: Bus,
+}
+
+#[pymethods]
+impl PyBus {
+    /// Create a bus. `transport` is `"text_json"` (default) or `"embedding"`.
+    #[new]
+    #[pyo3(signature = (transport = "text_json"))]
+    fn new(transport: &str) -> PyResult<Self> {
+        let inner = match transport {
+            "text_json" | "text" | "json" => Bus::text_json(),
+            "embedding" | "embeddings" => Bus::embedding(),
+            other => {
+                return Err(PyValueError::new_err(format!(
+                    "unknown transport '{other}'; expected 'text_json' or 'embedding'"
+                )))
+            }
+        };
+        Ok(Self { inner })
+    }
+
+    #[staticmethod]
+    fn text_json() -> Self {
+        Self {
+            inner: Bus::text_json(),
+        }
+    }
+
+    #[staticmethod]
+    fn embedding() -> Self {
+        Self {
+            inner: Bus::embedding(),
+        }
+    }
+
+    /// Active transport kind.
+    fn kind(&self) -> &'static str {
+        self.inner.kind().as_str()
+    }
+
+    /// Encode a JSON-compatible Python value into a Payload.
+    fn encode(&self, value: &Bound<'_, PyAny>) -> PyResult<PyPayload> {
+        let v: Value = depythonize(value)?;
+        let payload = self.inner.encode(&v).map_err(bus_err)?;
+        Ok(PyPayload { inner: payload })
+    }
+
+    /// Decode a Payload into a Python value.
+    fn decode(&self, py: Python<'_>, payload: &PyPayload) -> PyResult<PyObject> {
+        let v = self.inner.decode(&payload.inner).map_err(bus_err)?;
+        Ok(pythonize(py, &v)?.unbind())
+    }
+
+    /// Encode then decode.
+    fn roundtrip(&self, py: Python<'_>, value: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+        let v: Value = depythonize(value)?;
+        let out = self.inner.roundtrip(&v).map_err(bus_err)?;
+        Ok(pythonize(py, &out)?.unbind())
+    }
+
+    fn __repr__(&self) -> String {
+        format!("Bus(kind={})", self.inner.kind().as_str())
+    }
+}
+
 /// MoM native bindings.
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -122,5 +231,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(core_version, m)?)?;
     m.add_function(wrap_pyfunction!(ping, m)?)?;
     m.add_class::<PyStateStore>()?;
+    m.add_class::<PyBus>()?;
+    m.add_class::<PyPayload>()?;
     Ok(())
 }

@@ -6,8 +6,12 @@
 
 #![deny(missing_docs)]
 
+mod bus;
 mod state;
 
+pub use bus::{
+    Bus, BusError, EmbeddingTransport, Payload, PayloadKind, TextJsonTransport, Transport,
+};
 pub use state::StateStore;
 
 /// Crate version (kept in sync with the workspace package version).

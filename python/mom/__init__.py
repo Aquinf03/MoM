@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from mom.bus import Bus, Payload
 from mom.directory import ModelDirectory
 from mom.graph import Graph
 from mom.state import StateStore
@@ -26,9 +27,11 @@ except ImportError:  # pure-Python install / docs without extension
 
 
 __all__ = [
+    "Bus",
     "Graph",
     "ModelDirectory",
     "NATIVE",
+    "Payload",
     "StateStore",
     "__version__",
     "core_version",
