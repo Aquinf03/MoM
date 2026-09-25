@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/mom-core"]
+members = ["crates/mom-core", "crates/mom-py"]
 
 [workspace.package]
 version = "0.1.0"
@@ -11,3 +11,4 @@ repository = "https://github.com/aquinlabs/mom"
 
 [workspace.dependencies]
 mom-core = { path = "crates/mom-core" }
+pyo3 = { version = "0.25", features = ["extension-module"] }

@@ -55,6 +55,7 @@ one external run()  ← feels like a single model
 
 ```
 crates/mom-core/   Rust hot path (state, scheduler, timing)
+crates/mom-py/     PyO3 cdylib → mom._native
 python/mom/        Python package (adapters, directory, graph DSL)
 models/            Drop-in catalog — any model kind registers here
 examples/          Runnable demos
@@ -62,12 +63,14 @@ bench/             Latency / seamlessness harnesses
 ```
 
 ```bash
-# Python surface (no Rust required yet)
-cd python && pip install -e .
+# One-time: Rust (rustup) + project venv
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cd python && python3 -m venv ../.venv && source ../.venv/bin/activate
+pip install maturin && maturin develop
+
+python -c "import mom; print(mom.NATIVE, mom.ping())"
 python ../examples/hello_mom.py
 ```
-
-Rust/`maturin` bindings wire up once `cargo` is available — see comments in `python/pyproject.toml`.
 
 ## Hard problems (honest)
 
@@ -85,7 +88,7 @@ Orchestration overhead smaller than the natural variance of the model calls them
 
 ## Status
 
-Monorepo scaffolded. Core contracts and speculative runtime still ahead.
+Monorepo + Rust/`maturin` bindings working (`mom._native`). Graph execution / speculation still ahead.
 
 ## License
 

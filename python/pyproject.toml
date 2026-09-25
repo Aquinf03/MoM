@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.8,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "mom"
@@ -15,15 +15,7 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["mom*"]
-
-# When Rust is available, switch to maturin + a pyo3 cdylib that exposes mom-core.
-# [build-system]
-# requires = ["maturin>=1.5,<2.0"]
-# build-backend = "maturin"
-# [tool.maturin]
-# features = ["pyo3/extension-module"]
-# module-name = "mom._native"
-# manifest-path = "../crates/mom-core/Cargo.toml"
+[tool.maturin]
+manifest-path = "../crates/mom-py/Cargo.toml"
+module-name = "mom._native"
+python-source = "."
