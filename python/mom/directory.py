@@ -1,4 +1,8 @@
-"""Registry of model adapters — id → factory + metadata."""
+"""Registry of model adapters — id → factory + metadata.
+
+Mirrors registrations into `mom._native.ModelDirectory` when the extension
+is loaded so `run_graph` can invoke the same catalog.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +12,11 @@ from typing import Any, Callable
 from mom.adapter import Model
 
 ModelFactory = Callable[[], Model]
+
+try:
+    from mom._native import ModelDirectory as _NativeDirectory
+except ImportError:
+    _NativeDirectory = None
 
 
 @dataclass
@@ -23,6 +32,12 @@ class ModelDirectory:
 
     def __init__(self) -> None:
         self._entries: dict[str, ModelEntry] = {}
+        self._native = _NativeDirectory() if _NativeDirectory is not None else None
+
+    @property
+    def native(self) -> Any:
+        """Underlying native directory, or None if extension missing."""
+        return self._native
 
     def register(
         self,
@@ -34,12 +49,23 @@ class ModelDirectory:
     ) -> None:
         if id in self._entries:
             raise KeyError(f"model already registered: {id}")
+        tag_set = frozenset(tags or ())
         self._entries[id] = ModelEntry(
             id=id,
             factory=factory,
-            tags=frozenset(tags or ()),
+            tags=tag_set,
             meta=dict(meta),
         )
+        if self._native is not None:
+            # Native callables: (input, state) -> output
+            def _call(
+                inp: Any,
+                state: Any,
+                _factory: ModelFactory = factory,
+            ) -> Any:
+                return _factory().run(inp, state)
+
+            self._native.register(id, _call, tags=sorted(tag_set))
 
     def get(self, id: str) -> ModelEntry:
         try:

@@ -10,6 +10,7 @@ mod bus;
 mod graph;
 mod schedule;
 mod state;
+mod timing;
 
 pub use bus::{
     Bus, BusError, EmbeddingTransport, Payload, PayloadKind, TextJsonTransport, Transport,
@@ -20,6 +21,7 @@ pub use schedule::{
     SpecResult, Step,
 };
 pub use state::StateStore;
+pub use timing::{Span, SpanKind, Trace};
 
 /// Crate version (kept in sync with the workspace package version).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -1,4 +1,8 @@
-"""Execute graphs with optional speculative route-then-run overlap."""
+"""Execute graphs with optional speculative route-then-run overlap.
+
+Prefers native `run_graph` (planner + Trace timing) when the extension and a
+mirrored native directory are available; otherwise falls back to pure Python.
+"""
 
 from __future__ import annotations
 
@@ -16,10 +20,12 @@ try:
     from mom._native import plan_graph as _plan_graph
     from mom._native import route_from as _route_from
     from mom._native import route_matches_prior as _route_matches_prior
+    from mom._native import run_graph as _run_graph
 except ImportError:
     _plan_graph = None
     _route_from = None
     _route_matches_prior = None
+    _run_graph = None
 
 
 def _py_plan_graph(graph: Graph) -> dict[str, Any]:
@@ -81,7 +87,7 @@ def _py_plan_graph(graph: Graph) -> dict[str, Any]:
 
 
 def plan_graph(graph: Graph) -> dict[str, Any]:
-    """Return execution steps for `graph`."""
+    """Return execution steps for `graph` (native planner when available)."""
     if _plan_graph is not None:
         return _plan_graph(graph.to_dict())
     return _py_plan_graph(graph)
@@ -107,7 +113,7 @@ def route_matches_prior(route: str, prior_name: str, prior_model_id: str) -> boo
 
 @dataclass
 class RunResult:
-    """Output of one Scheduler.run."""
+    """Output of one Scheduler.run / mom.run."""
 
     output: Any
     metrics: dict[str, Any] = field(default_factory=dict)
@@ -132,12 +138,37 @@ class Scheduler:
         input: Any,
         state: StateStore | None = None,
     ) -> RunResult:
-        state = state or StateStore()
+        store = state or StateStore()
+
+        # Native path: planner + Trace spans + orchestration overhead.
+        if (
+            _run_graph is not None
+            and self.directory.native is not None
+            and type(store).__name__ == "StateStore"
+        ):
+            bus = self.bus if type(self.bus).__name__ == "Bus" else None
+            raw = _run_graph(
+                graph.to_dict(),
+                input,
+                self.directory.native,
+                state=store,
+                bus=bus,
+            )
+            metrics = dict(raw["metrics"])
+            # Prefer the native-returned handle (shares Arc with hop writes).
+            out_state = raw.get("state") or store
+            return RunResult(output=raw["output"], metrics=metrics, state=out_state)
+
+        return self._run_python(graph, input, store)
+
+    def _run_python(self, graph: Graph, input: Any, state: StateStore) -> RunResult:
         plan = plan_graph(graph)
         metrics: dict[str, Any] = {
             "node_ms": {},
             "spec": {},
             "overlap_saved_ms": 0.0,
+            "critical_path_ms": 0.0,
+            "spans": [],
         }
         t0 = time.perf_counter()
         current = input
@@ -145,9 +176,7 @@ class Scheduler:
 
         for step in plan["steps"]:
             if step["type"] == "run":
-                current = self._run_node(
-                    nodes[step["node"]], current, state, metrics
-                )
+                current = self._run_node(nodes[step["node"]], current, state, metrics)
             elif step["type"] == "speculate":
                 current = self._run_speculate(
                     graph,
@@ -160,7 +189,17 @@ class Scheduler:
             else:
                 raise ValueError(f"unknown step type: {step['type']}")
 
-        metrics["total_ms"] = (time.perf_counter() - t0) * 1000.0
+        total = (time.perf_counter() - t0) * 1000.0
+        metrics["total_ms"] = total
+        metrics["orchestration_overhead_ms"] = max(
+            0.0, total - float(metrics["critical_path_ms"])
+        )
+        metrics["router_ms"] = sum(
+            s["duration_ms"] for s in metrics["spans"] if s.get("kind") == "router"
+        )
+        metrics["model_ms"] = sum(
+            s["duration_ms"] for s in metrics["spans"] if s.get("kind") == "model"
+        )
         state.set("mom.metrics", metrics)
         return RunResult(output=current, metrics=metrics, state=state)
 
@@ -172,12 +211,21 @@ class Scheduler:
         metrics: dict[str, Any],
     ) -> Any:
         model = self.directory.create(node.model_id)
-        # Optional bus hop (encode/decode) — keeps transport on the path.
         payload = self.bus.encode(input)
         value = self.bus.decode(payload)
         t0 = time.perf_counter()
         out = model.run(value, state)
-        metrics["node_ms"][node.name] = (time.perf_counter() - t0) * 1000.0
+        ms = (time.perf_counter() - t0) * 1000.0
+        kind = (
+            "router"
+            if "router" in self.directory.get(node.model_id).tags
+            else "model"
+        )
+        metrics["node_ms"][node.name] = ms
+        metrics["critical_path_ms"] += ms
+        metrics["spans"].append(
+            {"name": node.name, "kind": kind, "duration_ms": ms}
+        )
         return out
 
     def _run_speculate(
@@ -208,7 +256,6 @@ class Scheduler:
             out = prior_model.run(value, state)
             return out, (time.perf_counter() - t0) * 1000.0
 
-        # Overlap: prior runs concurrently with router (sleep/I/O release GIL).
         with ThreadPoolExecutor(max_workers=2) as pool:
             fut_prior = pool.submit(run_prior)
             route_out, router_ms = run_router()
@@ -216,7 +263,20 @@ class Scheduler:
 
         metrics["node_ms"][router_name] = router_ms
         metrics["node_ms"][prior_name] = prior_ms
+        wall = max(router_ms, prior_ms)
+        metrics["critical_path_ms"] += wall
         metrics["overlap_saved_ms"] += min(router_ms, prior_ms)
+        metrics["spans"].extend(
+            [
+                {"name": router_name, "kind": "router", "duration_ms": router_ms},
+                {"name": prior_name, "kind": "model", "duration_ms": prior_ms},
+                {
+                    "name": f"{router_name}+{prior_name}",
+                    "kind": "speculate_wall",
+                    "duration_ms": wall,
+                },
+            ]
+        )
 
         route = route_from(route_out)
         if route is None:
@@ -227,7 +287,6 @@ class Scheduler:
             return prior_out
 
         metrics["spec"][router_name] = "miss"
-        # Miss: run the selected target (node name or model id).
         target = self._resolve_route(graph, route)
         return self._run_node(target, value, state, metrics)
 
@@ -235,9 +294,20 @@ class Scheduler:
         for n in graph.nodes:
             if n.name == route or n.model_id == route:
                 return n
-        # Model not already a graph node — synthesize a transient node.
         if route not in self.directory:
             raise KeyError(f"route '{route}' not in graph or directory")
         from mom.graph import Node
 
         return Node(name=route, model_id=route)
+
+
+def run(
+    graph: Graph,
+    input: Any,
+    directory: ModelDirectory,
+    *,
+    state: StateStore | None = None,
+    bus: Bus | None = None,
+) -> RunResult:
+    """Single external call — feels like one model."""
+    return Scheduler(directory, bus=bus).run(graph, input, state)
