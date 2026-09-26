@@ -7,6 +7,7 @@ Trace metrics. Graph DSL + Scheduler stay in Python and call into the extension.
 from __future__ import annotations
 
 from mom.bus import Bus, Payload
+from mom.cancel import CancelToken, CancelledError
 from mom.directory import ModelDirectory
 from mom.graph import Graph
 from mom.scheduler import RunResult, Scheduler, plan_graph, run
@@ -35,6 +36,8 @@ except ImportError:
 
 __all__ = [
     "Bus",
+    "CancelToken",
+    "CancelledError",
     "Graph",
     "ModelDirectory",
     "NATIVE",

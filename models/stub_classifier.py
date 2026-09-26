@@ -6,6 +6,7 @@ from typing import Any
 
 from models._util import append_trace, as_text, sleep_ms
 from mom.directory import ModelDirectory
+from mom.cancel import CancelToken
 from mom.state import StateStore
 
 
@@ -20,8 +21,13 @@ class ClassifierModel:
     def __init__(self, delay_ms: float = 2.0) -> None:
         self.delay_ms = delay_ms
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         text = as_text(input).lower()
         label = "hard" if (len(text) > 80 or "reason" in text or "complex" in text) else "easy"
         append_trace(state, f"stub.classifier:{label}")

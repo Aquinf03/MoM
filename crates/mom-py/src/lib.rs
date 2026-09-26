@@ -339,14 +339,26 @@ fn call_model(
     model_id: &str,
     input: Bound<'_, PyAny>,
     state: PyStateStore,
+    cancel: Option<&Bound<'_, PyAny>>,
 ) -> PyResult<(PyObject, f64)> {
     let entry = directory.entries.get(model_id).ok_or_else(|| {
         PyKeyError::new_err(format!("unknown model: {model_id}"))
     })?;
     let t0 = Instant::now();
-    let out = entry.call.call1(py, (input, state))?;
+    let out = if let Some(c) = cancel {
+        entry.call.call1(py, (input, state, c.clone()))?
+    } else {
+        entry.call.call1(py, (input, state))?
+    };
     let ms = t0.elapsed().as_secs_f64() * 1000.0;
     Ok((out.into(), ms))
+}
+
+fn is_cancelled_error(py: Python<'_>, err: &PyErr) -> bool {
+    err.get_type(py)
+        .name()
+        .map(|n| n.to_string() == "CancelledError")
+        .unwrap_or(false)
 }
 
 fn resolve_model_id(graph: &Graph, route: &str) -> Option<String> {
@@ -413,6 +425,7 @@ fn run_graph(
                     &n.model_id,
                     decoded.bind(py).clone(),
                     state.clone(),
+                    None,
                 )?;
                 let kind = if directory
                     .entries
@@ -447,7 +460,10 @@ fn run_graph(
                     t_bus.elapsed().as_secs_f64() * 1000.0,
                 );
 
-                // Clone handles for overlapped prior thread.
+                // Cooperative cancel token for the speculative prior.
+                let cancel_mod = py.import("mom.cancel")?;
+                let cancel = cancel_mod.getattr("CancelToken")?.call0()?;
+
                 let prior_call = directory
                     .entries
                     .get(&prior_node.model_id)
@@ -459,15 +475,29 @@ fn run_graph(
                 let state_arc = state.inner.clone();
                 let input_for_prior: Value = depythonize(decoded.bind(py))?;
                 let input_for_router = decoded;
+                let cancel_for_prior = cancel.clone().unbind();
 
                 let prior_handle = thread::spawn(move || {
                     Python::with_gil(|py| {
                         let state = PyStateStore::from_arc(state_arc);
                         let input_obj = pythonize(py, &input_for_prior)?;
+                        let cancel = cancel_for_prior.bind(py);
                         let t0 = Instant::now();
-                        let out = prior_call.call1(py, (input_obj, state))?;
-                        let ms = t0.elapsed().as_secs_f64() * 1000.0;
-                        Ok::<(PyObject, f64), PyErr>((out.into(), ms))
+                        match prior_call.call1(py, (input_obj, state, cancel.clone())) {
+                            Ok(out) => {
+                                let ms = t0.elapsed().as_secs_f64() * 1000.0;
+                                Ok::<(Option<PyObject>, f64, bool), PyErr>((
+                                    Some(out.into()),
+                                    ms,
+                                    false,
+                                ))
+                            }
+                            Err(e) if is_cancelled_error(py, &e) => {
+                                let ms = t0.elapsed().as_secs_f64() * 1000.0;
+                                Ok((None, ms, true))
+                            }
+                            Err(e) => Err(e),
+                        }
                     })
                 });
 
@@ -477,20 +507,32 @@ fn run_graph(
                     &router_node.model_id,
                     input_for_router.bind(py).clone(),
                     state.clone(),
+                    None,
                 )?;
-                // Release the GIL while joining so the prior thread can finish.
-                let (prior_out, prior_ms) = py.allow_threads(|| {
-                    prior_handle
-                        .join()
-                        .map_err(|_| PyValueError::new_err("prior thread panicked"))?
-                })?;
 
                 let route_val: Value = depythonize(route_out.bind(py))?;
                 let route = route_from_value(&route_val).ok_or_else(|| {
                     PyValueError::new_err(format!("router '{router}' did not return a route"))
                 })?;
+                let hit = route_matches_prior(&route, prior, &prior_node.model_id);
 
-                if route_matches_prior(&route, prior, &prior_node.model_id) {
+                if !hit {
+                    // Miss: cancel speculative loser before joining.
+                    cancel.call_method0("cancel")?;
+                }
+
+                let (prior_out, prior_ms, cancelled) = py.allow_threads(|| {
+                    prior_handle
+                        .join()
+                        .map_err(|_| PyValueError::new_err("prior thread panicked"))?
+                })?;
+
+                if hit {
+                    if cancelled || prior_out.is_none() {
+                        return Err(PyValueError::new_err(
+                            "speculative prior cancelled on hit path",
+                        ));
+                    }
                     trace.record_speculate(
                         router.clone(),
                         prior.clone(),
@@ -498,7 +540,7 @@ fn run_graph(
                         prior_ms,
                         SpecResult::Hit,
                     );
-                    current = prior_out;
+                    current = prior_out.unwrap();
                 } else {
                     trace.record_speculate(
                         router.clone(),
@@ -522,8 +564,20 @@ fn run_graph(
                         &model_id,
                         rein.bind(py).clone(),
                         state.clone(),
+                        None,
                     )?;
                     trace.record_miss_model(route, ms);
+                    // Stash cancel stats on state for metrics merge below.
+                    if cancelled {
+                        state.store().set(
+                            "mom.prior_cancelled",
+                            serde_json::json!(true),
+                        );
+                        state.store().set(
+                            "mom.prior_cancelled_ms",
+                            serde_json::json!(prior_ms),
+                        );
+                    }
                     current = out;
                 }
             }
@@ -531,7 +585,15 @@ fn run_graph(
     }
 
     trace.finish(run_t0.elapsed().as_secs_f64() * 1000.0);
-    let metrics = trace.to_json();
+    let mut metrics = trace.to_json();
+    if let Some(obj) = metrics.as_object_mut() {
+        if state.store().get("mom.prior_cancelled").and_then(|v| v.as_bool()) == Some(true) {
+            obj.insert("prior_cancelled".into(), serde_json::json!(true));
+            if let Some(ms) = state.store().get("mom.prior_cancelled_ms") {
+                obj.insert("prior_cancelled_ms".into(), ms);
+            }
+        }
+    }
     state.store().set("mom.metrics", metrics.clone());
 
     let out = PyDict::new(py);

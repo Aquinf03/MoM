@@ -6,6 +6,7 @@ from typing import Any
 
 from models._util import append_trace, sleep_ms
 from mom.directory import ModelDirectory
+from mom.cancel import CancelToken
 from mom.state import StateStore
 
 
@@ -20,8 +21,13 @@ class RouterModel:
         self.default_route = default_route
         self.delay_ms = delay_ms
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         route = state.get("route") or self.default_route
         append_trace(state, f"stub.router->{route}")
         return {"route": route}

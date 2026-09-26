@@ -7,6 +7,7 @@ from typing import Any
 
 from models._util import append_trace, as_text, sleep_ms
 from mom.directory import ModelDirectory
+from mom.cancel import CancelToken
 from mom.state import StateStore
 
 
@@ -26,8 +27,13 @@ class EmbedderModel:
         self.dims = dims
         self.delay_ms = delay_ms
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         text = as_text(input)
         vec = _pseudo_embedding(text, self.dims)
         append_trace(state, "stub.embedder")

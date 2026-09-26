@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from mom.bus import Bus
+from mom.cancel import CancelToken, CancelledError
 from mom.directory import ModelDirectory
 from mom.graph import Graph
 from mom.state import StateStore
@@ -245,31 +246,58 @@ class Scheduler:
 
         payload = self.bus.encode(input)
         value = self.bus.decode(payload)
+        cancel = CancelToken()
 
         def run_router() -> tuple[Any, float]:
             t0 = time.perf_counter()
-            out = router_model.run(value, state)
+            out = router_model.run(value, state, cancel=None)
             return out, (time.perf_counter() - t0) * 1000.0
 
         def run_prior() -> tuple[Any, float]:
             t0 = time.perf_counter()
-            out = prior_model.run(value, state)
+            try:
+                out = prior_model.run(value, state, cancel=cancel)
+            except CancelledError:
+                ms = (time.perf_counter() - t0) * 1000.0
+                return ("__cancelled__", ms)
             return out, (time.perf_counter() - t0) * 1000.0
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             fut_prior = pool.submit(run_prior)
             route_out, router_ms = run_router()
+
+            route = route_from(route_out)
+            if route is None:
+                cancel.cancel()
+                fut_prior.result()
+                raise ValueError(f"router '{router_name}' did not return a route")
+
+            hit = route_matches_prior(route, prior_name, prior_node.model_id)
+            if not hit:
+                # Miss: stop speculative loser before waiting on it.
+                cancel.cancel()
+
             prior_out, prior_ms = fut_prior.result()
 
+        cancelled = prior_out == "__cancelled__"
         metrics["node_ms"][router_name] = router_ms
         metrics["node_ms"][prior_name] = prior_ms
         wall = max(router_ms, prior_ms)
         metrics["critical_path_ms"] += wall
-        metrics["overlap_saved_ms"] += min(router_ms, prior_ms)
+        if not cancelled:
+            metrics["overlap_saved_ms"] += min(router_ms, prior_ms)
+        else:
+            metrics["prior_cancelled"] = True
+            metrics["prior_cancelled_ms"] = prior_ms
         metrics["spans"].extend(
             [
                 {"name": router_name, "kind": "router", "duration_ms": router_ms},
-                {"name": prior_name, "kind": "model", "duration_ms": prior_ms},
+                {
+                    "name": prior_name,
+                    "kind": "model",
+                    "duration_ms": prior_ms,
+                    "cancelled": cancelled,
+                },
                 {
                     "name": f"{router_name}+{prior_name}",
                     "kind": "speculate_wall",
@@ -278,12 +306,10 @@ class Scheduler:
             ]
         )
 
-        route = route_from(route_out)
-        if route is None:
-            raise ValueError(f"router '{router_name}' did not return a route")
-
-        if route_matches_prior(route, prior_name, prior_node.model_id):
+        if hit:
             metrics["spec"][router_name] = "hit"
+            if cancelled:
+                raise RuntimeError("speculative prior cancelled on hit path")
             return prior_out
 
         metrics["spec"][router_name] = "miss"

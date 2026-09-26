@@ -6,6 +6,7 @@ from typing import Any
 
 from models._util import append_trace, sleep_ms
 from mom.directory import ModelDirectory
+from mom.cancel import CancelToken
 from mom.state import StateStore
 
 
@@ -16,8 +17,13 @@ class EchoModel:
         self.delay_ms = delay_ms
         self.tag = tag
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         append_trace(state, self.tag)
         return input
 

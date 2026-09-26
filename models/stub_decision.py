@@ -6,6 +6,7 @@ from typing import Any
 
 from models._util import append_trace, as_text, sleep_ms
 from mom.directory import ModelDirectory
+from mom.cancel import CancelToken
 from mom.state import StateStore
 
 
@@ -20,8 +21,13 @@ class DecisionModel:
     def __init__(self, delay_ms: float = 15.0) -> None:
         self.delay_ms = delay_ms
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         label = state.get("classification")
         text = as_text(input).lower()
         if label == "hard" or "reason" in text or len(text) > 80:
@@ -43,8 +49,13 @@ class ReconcileModel:
     def __init__(self, delay_ms: float = 25.0) -> None:
         self.delay_ms = delay_ms
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         candidates = state.get("candidates") or []
         if not isinstance(candidates, list):
             candidates = list(candidates)

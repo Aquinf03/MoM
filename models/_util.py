@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import time
 from typing import Any
 
+from mom.cancel import CancelToken, sleep_ms as _cancelable_sleep
 from mom.state import StateStore
 
 
@@ -15,9 +15,8 @@ def append_trace(state: StateStore, tag: str) -> None:
     state.set("trace", [*trace, tag])
 
 
-def sleep_ms(ms: float) -> None:
-    if ms > 0:
-        time.sleep(ms / 1000.0)
+def sleep_ms(ms: float, cancel: CancelToken | None = None) -> None:
+    _cancelable_sleep(ms, cancel)
 
 
 def as_text(input: Any) -> str:

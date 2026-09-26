@@ -57,13 +57,18 @@ class ModelDirectory:
             meta=dict(meta),
         )
         if self._native is not None:
-            # Native callables: (input, state) -> output
+            # Native callables: (input, state) or (input, state, cancel) -> output
             def _call(
                 inp: Any,
                 state: Any,
+                cancel: Any = None,
                 _factory: ModelFactory = factory,
             ) -> Any:
-                return _factory().run(inp, state)
+                model = _factory()
+                try:
+                    return model.run(inp, state, cancel=cancel)
+                except TypeError:
+                    return model.run(inp, state)
 
             self._native.register(id, _call, tags=sorted(tag_set))
 

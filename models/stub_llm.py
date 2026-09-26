@@ -6,6 +6,7 @@ from typing import Any
 
 from models._util import append_trace, as_text, sleep_ms
 from mom.directory import ModelDirectory
+from mom.cancel import CancelToken
 from mom.state import StateStore
 from mom.turn import history_text, turn_count
 
@@ -16,8 +17,13 @@ class LlmModel:
     def __init__(self, delay_ms: float = 80.0) -> None:
         self.delay_ms = delay_ms
 
-    def run(self, input: Any, state: StateStore) -> Any:
-        sleep_ms(self.delay_ms)
+    def run(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ) -> Any:
+        sleep_ms(self.delay_ms, cancel)
         text = as_text(input)
         ctx_turns = turn_count(state)
         _ = history_text(state, limit=12)
