@@ -86,9 +86,29 @@ python ../examples/hello_mom.py
 
 Orchestration overhead smaller than the natural variance of the model calls themselves — functionally invisible, not literally zero.
 
+**Pre-SDK gates** (re-run anytime):
+
+```bash
+python bench/done_means.py          # catalog width + drop-in + speculate proof + hello
+python examples/hello_mom.py        # one command → colocated composition
+python bench/latency_compare.py     # numbers vs single-SLM baseline
+```
+
+See [`docs/speculation_proof.md`](./docs/speculation_proof.md) and [`docs/latency_hide.md`](./docs/latency_hide.md).
+
+## Open / deferred
+
+| Topic | Status |
+| --- | --- |
+| Text vs embedding bus | Text default; embedding optional on a hop — tradeoff stands ([`docs/latency_hide.md`](./docs/latency_hide.md)) |
+| Real model weights | Deferred — stubs prove contracts + latency gates; adapters swap in without runtime rewrite |
+| Distributed / multi-host state | Deferred — v1 locked colocated |
+| Public SDK package | Next (§9) — stabilize APIs after these gates stay green |
+| Second language client | Optional, only if contracts hold |
+
 ## Status
 
-Monorepo + Rust/`maturin` bindings, speculative scheduler, directory catalog, graph registry + heuristic selection. Packaging / public SDK still ahead (§9).
+Done through topology registry + done-means gates. Packaging / public SDK still ahead (§9).
 
 ## License
 

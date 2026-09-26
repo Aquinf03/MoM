@@ -17,9 +17,12 @@ _SEED = (
     "models.stub_similarity",
     "models.stub_decision",
     "models.stub_reverse",
+    "models.stub_shout",
     "models.stub_vision",
     "models.stub_audio",
     "models.stub_tools",
+    "models.stub_rerank",
+    "models.stub_code",
 )
 
 

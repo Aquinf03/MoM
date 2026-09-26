@@ -5,5 +5,10 @@
 3. Add the module path to `_SEED` in `models/__init__.py` **or** call `register(...)` yourself.
 4. Wire it into any `Graph` by id — `.add("node", "my.id")` — no changes to `mom-core` or the scheduler.
 
-Same interface for classifiers, SLMs, LLMs, embedders, vision, ASR/TTS, retrievers, tools, …
+Same interface for classifiers, SLMs, LLMs, embedders, vision, ASR/TTS, retrievers, tools, code, …
 Graphs only reference directory ids — add a size/vendor variant the same way.
+
+**Proof:** `python examples/add_a_model.py` and `python bench/dropin_smoke.py`
+(drop-in `stub.shout` — no edits under `crates/` or `python/mom/`).
+
+**Width gate:** `python bench/catalog_smoke.py`
