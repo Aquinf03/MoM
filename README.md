@@ -63,14 +63,17 @@ bench/             Latency / seamlessness harnesses
 ```
 
 ```bash
-# One-time: Rust (rustup) + project venv
+# One-time: Rust (rustup) + project venv + SDK install
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-cd python && python3 -m venv ../.venv && source ../.venv/bin/activate
-pip install maturin && maturin develop
-
-python -c "import mom; print(mom.NATIVE, mom.ping())"
-python ../examples/hello_mom.py
+python3 -m venv .venv && source .venv/bin/activate
+pip install maturin
+cd python && maturin develop && cd ..
+mom-ping
+python examples/hello_mom.py
+python bench/prod_matrix.py    # production-grade SDK matrix
 ```
+
+Docs: [`docs/sdk.md`](./docs/sdk.md) · [`docs/adapter_guide.md`](./docs/adapter_guide.md) · [`docs/concepts.md`](./docs/concepts.md)
 
 ## Hard problems (honest)
 
@@ -103,12 +106,12 @@ See [`docs/speculation_proof.md`](./docs/speculation_proof.md) and [`docs/latenc
 | Text vs embedding bus | Text default; embedding optional on a hop — tradeoff stands ([`docs/latency_hide.md`](./docs/latency_hide.md)) |
 | Real model weights | Deferred — stubs prove contracts + latency gates; adapters swap in without runtime rewrite |
 | Distributed / multi-host state | Deferred — v1 locked colocated |
-| Public SDK package | Next (§9) — stabilize APIs after these gates stay green |
-| Second language client | Optional, only if contracts hold |
+| Public SDK package | Shipped from repo (`maturin develop` / `pip install -e python/`) — see [`docs/sdk.md`](./docs/sdk.md) |
+| Second language client | Deferred until contracts stay green under prod matrix |
 
 ## Status
 
-Done through topology registry + done-means gates. Packaging / public SDK still ahead (§9).
+Python SDK installable from the repo; adapter/graph APIs marked stable (`mom.api`). Production matrix green (`bench/prod_matrix.py`). Optional second-language client still deferred.
 
 ## License
 

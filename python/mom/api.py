@@ -1,13 +1,7 @@
-"""MoM — Python SDK for latency-transparent model composition.
+"""Stable SDK exports — prefer `import mom` or `from mom.api import ...`.
 
-Stable imports::
-
-    import mom
-    from mom import Graph, ModelDirectory, Session, run
-    from mom.adapter import Model
-
-Native when loaded: StateStore, Bus, ModelDirectory mirror, plan_graph, run_graph,
-Trace metrics. Graph DSL + Scheduler stay in Python and call into the extension.
+This module re-exports the frozen public surface for v0.1. Anything not listed
+here is internal and may change without notice.
 """
 
 from __future__ import annotations
@@ -27,26 +21,16 @@ from mom.shapes import register_builtin_shapes
 from mom.state import StateStore
 from mom.turn import add_assistant, add_user, get_messages, turn_count
 
-__version__ = "0.1.0"
+# Lazy version/native to avoid import cycles when mom.__init__ is loading.
+def __getattr__(name: str):
+    if name in {"__version__", "NATIVE", "core_version", "ping"}:
+        import mom as _pkg
 
-try:
-    from mom import _native as _native
-
-    __version__ = _native.__version__
-    core_version = _native.core_version
-    ping = _native.ping
-    NATIVE = True
-except ImportError:
-    NATIVE = False
-
-    def core_version() -> str:
-        return __version__
-
-    def ping() -> str:
-        return "mom-core (python fallback)"
+        return getattr(_pkg, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-__all__ = [
+STABLE_API = (
     "Bus",
     "CancelToken",
     "CancelledError",
@@ -81,4 +65,6 @@ __all__ = [
     "run_named",
     "select_graph",
     "turn_count",
-]
+)
+
+__all__ = list(STABLE_API)

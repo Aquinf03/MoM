@@ -1,4 +1,8 @@
-"""Thin adapter contract — any model kind implements this."""
+"""Thin adapter contract — any model kind implements this.
+
+Stable SDK surface: implement `Model.run` and register into `ModelDirectory`.
+No subclass hierarchy per modality is required.
+"""
 
 from __future__ import annotations
 
@@ -25,3 +29,6 @@ class Model(Protocol):
         can stop mid-flight should call `cancel.check()` / honor cancel in waits.
         """
         ...
+
+
+__all__ = ["Model"]
