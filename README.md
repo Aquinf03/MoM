@@ -80,7 +80,7 @@ python ../examples/hello_mom.py
 
 **Latency** — Sequential hops show seams. Hide them with speculation (start the likely winner with the router) and keep routers near noise (low-ms). A heavy “decision LLM” on the critical path collapses the thesis.
 
-**Topology** — Different plugs need different *graphs*, not just different nodes. Meta-selection over graphs is the least solved piece; both fixed demo paths and dynamic selection are in scope end-to-end.
+**Topology** — Different plugs need different *graphs*, not just different nodes. `GraphRegistry` holds named shapes; `heuristic_select` picks among what’s satisfied by the directory. See [`docs/latency_hide.md`](./docs/latency_hide.md) for which compositions can hide latency.
 
 ## Success
 
@@ -88,7 +88,7 @@ Orchestration overhead smaller than the natural variance of the model calls them
 
 ## Status
 
-Monorepo + Rust/`maturin` bindings working (`mom._native`). Graph execution / speculation still ahead.
+Monorepo + Rust/`maturin` bindings, speculative scheduler, directory catalog, graph registry + heuristic selection. Packaging / public SDK still ahead (§9).
 
 ## License
 

@@ -12,8 +12,11 @@ from mom.directory import ModelDirectory
 from mom.graph import Graph
 from mom.limits import ConcurrencyLimits, LimitExceeded, Limiter
 from mom.prior import LightPrior, apply_prior_to_graph
-from mom.scheduler import RunResult, Scheduler, plan_graph, run
+from mom.registry import GraphRegistry, GraphSpec
+from mom.scheduler import RunResult, Scheduler, plan_graph, run, run_named
+from mom.select import heuristic_select, select_graph
 from mom.session import Session
+from mom.shapes import register_builtin_shapes
 from mom.state import StateStore
 from mom.turn import add_assistant, add_user, get_messages, turn_count
 
@@ -42,6 +45,8 @@ __all__ = [
     "CancelledError",
     "ConcurrencyLimits",
     "Graph",
+    "GraphRegistry",
+    "GraphSpec",
     "LightPrior",
     "LimitExceeded",
     "Limiter",
@@ -58,8 +63,12 @@ __all__ = [
     "apply_prior_to_graph",
     "core_version",
     "get_messages",
+    "heuristic_select",
     "ping",
     "plan_graph",
+    "register_builtin_shapes",
     "run",
+    "run_named",
+    "select_graph",
     "turn_count",
 ]

@@ -123,6 +123,27 @@ class RunResult:
     state: StateStore | None = None
 
 
+def _needs_wave_exec(graph: Graph) -> bool:
+    """True when multiple roots or a join — needs shared-input fan-out."""
+    nodes = {n.name for n in graph.nodes}
+    parents: dict[str, list[str]] = {n: [] for n in nodes}
+    for e in graph.edges:
+        if e.kind != "depend":
+            continue
+        parents[e.to].append(e.frm)
+    roots = [n for n, p in parents.items() if not p]
+    joins = [n for n, p in parents.items() if len(p) > 1]
+    return len(roots) > 1 or bool(joins)
+
+
+def _candidate_record(out: Any, model_id: str) -> dict[str, Any]:
+    if isinstance(out, dict):
+        text = out.get("text", out)
+        model = out.get("model", model_id)
+        return {"model": model, "text": text if isinstance(text, str) else str(text)}
+    return {"model": model_id, "text": str(out)}
+
+
 class Scheduler:
     """Execute a graph against a model directory + shared state."""
 
@@ -172,10 +193,11 @@ class Scheduler:
             suggested = self.prior.suggest(input, store)
             active = apply_prior_to_graph(graph, suggested)
 
-        # Embedding-bus prototype: prefer Python path so non-vector ingress
-        # can pass through; measure packing only on vector hops.
+        wave = _needs_wave_exec(active)
+        # Embedding-bus / fan-out waves: Python path.
         use_native = (
-            _run_graph is not None
+            not wave
+            and _run_graph is not None
             and self.directory.native is not None
             and type(store).__name__ == "StateStore"
             and self.bus.kind() != "embedding"
@@ -193,6 +215,8 @@ class Scheduler:
             metrics = dict(raw["metrics"])
             out_state = raw.get("state") or store
             result = RunResult(output=raw["output"], metrics=metrics, state=out_state)
+        elif wave:
+            result = self._run_python_waves(active, input, store)
         else:
             result = self._run_python(active, input, store)
 
@@ -248,6 +272,125 @@ class Scheduler:
         )
         state.set("mom.metrics", metrics)
         return RunResult(output=current, metrics=metrics, state=state)
+
+    def _run_python_waves(
+        self, graph: Graph, input: Any, state: StateStore
+    ) -> RunResult:
+        """Fan-out / join executor: siblings share parent input; join sees candidates."""
+        metrics: dict[str, Any] = {
+            "node_ms": {},
+            "spec": {},
+            "overlap_saved_ms": 0.0,
+            "critical_path_ms": 0.0,
+            "spans": [],
+            "waves": [],
+        }
+        t0 = time.perf_counter()
+        nodes = {n.name: n for n in graph.nodes}
+        parents: dict[str, list[str]] = {n: [] for n in nodes}
+        for e in graph.edges:
+            if e.kind != "depend":
+                continue
+            parents[e.to].append(e.frm)
+
+        # If the graph also has speculate edges, fall back to linear plan for those
+        # (wave path is for fan-out/join). Mixed speculate+fanout is v2+.
+        if any(e.kind == "speculate" for e in graph.edges):
+            return self._run_python(graph, input, state)
+
+        outputs: dict[str, Any] = {}
+        done: set[str] = set()
+        last: Any = input
+
+        def ready_nodes() -> list[str]:
+            return sorted(
+                n for n in nodes if n not in done and all(p in done for p in parents[n])
+            )
+
+        while True:
+            wave = ready_nodes()
+            if not wave:
+                break
+            metrics["waves"].append(
+                {"type": "parallel" if len(wave) > 1 else "run", "nodes": list(wave)}
+            )
+
+            def input_for(name: str) -> Any:
+                pars = parents[name]
+                if not pars:
+                    return input
+                if len(pars) == 1:
+                    return outputs[pars[0]]
+                return input  # join: reconcile reads state['candidates']
+
+            if len(wave) == 1:
+                name = wave[0]
+                out = self._run_node(nodes[name], input_for(name), state, metrics)
+                outputs[name] = out
+                last = out
+                done.add(name)
+                continue
+
+            # Parallel fan-out — critical path advances by max(node_ms).
+            shared = input
+            # Prefer shared parent output when all siblings share one parent.
+            p0 = parents[wave[0]]
+            if p0 and all(parents[n] == p0 for n in wave):
+                shared = outputs[p0[0]] if len(p0) == 1 else input
+            elif all(not parents[n] for n in wave):
+                shared = input
+
+            def run_one(name: str) -> tuple[str, Any, float]:
+                node = nodes[name]
+                model = self.directory.create(node.model_id)
+                value = self._bus_hop(shared, metrics)
+                with self.limiter.model_slot():
+                    t1 = time.perf_counter()
+                    try:
+                        out = model.run(value, state, cancel=None)
+                    except TypeError:
+                        out = model.run(value, state)
+                    ms = (time.perf_counter() - t1) * 1000.0
+                return name, out, ms
+
+            with ThreadPoolExecutor(max_workers=len(wave)) as pool:
+                results = list(pool.map(run_one, wave))
+
+            wave_ms = 0.0
+            cands = []
+            for name, out, ms in results:
+                outputs[name] = out
+                metrics["node_ms"][name] = ms
+                metrics["spans"].append(
+                    {"name": name, "kind": "model", "duration_ms": ms}
+                )
+                wave_ms = max(wave_ms, ms)
+                cands.append(_candidate_record(out, nodes[name].model_id))
+                last = out
+                done.add(name)
+            metrics["critical_path_ms"] += wave_ms
+            metrics["overlap_saved_ms"] += max(
+                0.0, sum(metrics["node_ms"][n] for n in wave) - wave_ms
+            )
+            state.set("candidates", cands)
+
+        if len(done) != len(nodes):
+            missing = sorted(set(nodes) - done)
+            raise ValueError(f"wave exec stuck; unfinished nodes: {missing}")
+
+        total = (time.perf_counter() - t0) * 1000.0
+        metrics["total_ms"] = total
+        metrics["orchestration_overhead_ms"] = max(
+            0.0, total - float(metrics["critical_path_ms"])
+        )
+        metrics["router_ms"] = sum(
+            s["duration_ms"] for s in metrics["spans"] if s.get("kind") == "router"
+        )
+        metrics["model_ms"] = sum(
+            s["duration_ms"] for s in metrics["spans"] if s.get("kind") == "model"
+        )
+        state.set("mom.metrics", metrics)
+        return RunResult(output=last, metrics=metrics, state=state)
 
     def _bus_hop(self, value: Any, metrics: dict[str, Any] | None = None) -> Any:
         """Encode/decode through the hop bus; embedding packs only float vectors."""
@@ -435,3 +578,44 @@ def run(
     return Scheduler(directory, bus=bus, limits=limits, prior=prior).run(
         graph, input, state
     )
+
+
+def run_named(
+    name: str | None,
+    input: Any,
+    directory: ModelDirectory,
+    registry: Any,
+    *,
+    state: StateStore | None = None,
+    bus: Bus | None = None,
+    limits: ConcurrencyLimits | Limiter | None = None,
+    prior: LightPrior | None = None,
+    selector: Any = None,
+) -> RunResult:
+    """Pick a graph from the registry (by name or selector) and run it."""
+    from mom.select import heuristic_select
+
+    spec = registry.pick(
+        directory,
+        name,
+        selector=selector or (heuristic_select if name is None else None),
+        input=input,
+        state=state,
+    )
+    result = run(
+        spec.graph,
+        input,
+        directory,
+        state=state,
+        bus=bus,
+        limits=limits,
+        prior=prior,
+    )
+    result.metrics = {
+        **result.metrics,
+        "graph": spec.name,
+        "shape": spec.shape,
+        "latency_hideable": spec.latency_hideable,
+    }
+    return result
+
