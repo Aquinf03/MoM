@@ -21,11 +21,22 @@ def _pseudo_embedding(text: str, dims: int = 8) -> list[float]:
 
 
 class EmbedderModel:
-    """Returns an embedding vector; ~5ms."""
+    """Returns an embedding vector; ~5ms.
 
-    def __init__(self, dims: int = 8, delay_ms: float = 5.0) -> None:
+    `raw=True` yields a bare float list so an embedding bus can carry the hop
+    without a JSON envelope (see `bench/embedding_bus_smoke.py`).
+    """
+
+    def __init__(
+        self,
+        dims: int = 8,
+        delay_ms: float = 5.0,
+        *,
+        raw: bool = False,
+    ) -> None:
         self.dims = dims
         self.delay_ms = delay_ms
+        self.raw = raw
 
     def run(
         self,
@@ -38,6 +49,8 @@ class EmbedderModel:
         vec = _pseudo_embedding(text, self.dims)
         append_trace(state, "stub.embedder")
         state.set("embedding", vec)
+        if self.raw:
+            return vec
         return {"embedding": vec, "dims": self.dims, "model": "stub.embedder"}
 
 
@@ -46,6 +59,13 @@ def register(directory: ModelDirectory) -> None:
         "stub.embedder",
         lambda: EmbedderModel(),
         tags={"stub", "embedder"},
+        latency_class="cheap",
+        modality="embedding",
+    )
+    directory.register(
+        "stub.embedder.raw",
+        lambda: EmbedderModel(raw=True),
+        tags={"stub", "embedder", "raw"},
         latency_class="cheap",
         modality="embedding",
     )

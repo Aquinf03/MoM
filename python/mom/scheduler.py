@@ -15,6 +15,8 @@ from mom.bus import Bus
 from mom.cancel import CancelToken, CancelledError
 from mom.directory import ModelDirectory
 from mom.graph import Graph
+from mom.limits import ConcurrencyLimits, Limiter
+from mom.prior import LightPrior, apply_prior_to_graph
 from mom.state import StateStore
 
 try:
@@ -129,9 +131,18 @@ class Scheduler:
         directory: ModelDirectory,
         *,
         bus: Bus | None = None,
+        limits: ConcurrencyLimits | Limiter | None = None,
+        prior: LightPrior | None = None,
     ) -> None:
         self.directory = directory
         self.bus = bus or Bus.text_json()
+        self.prior = prior
+        if isinstance(limits, Limiter):
+            self.limiter = limits
+        elif isinstance(limits, ConcurrencyLimits):
+            self.limiter = Limiter(limits)
+        else:
+            self.limiter = Limiter()
 
     def run(
         self,
@@ -140,27 +151,61 @@ class Scheduler:
         state: StateStore | None = None,
     ) -> RunResult:
         store = state or StateStore()
+        with self.limiter.run_slot() as waited_ms:
+            result = self._run_inner(graph, input, store)
+            result.metrics = {
+                **result.metrics,
+                "limits": self.limiter.snapshot(),
+                "run_waited_ms": waited_ms,
+            }
+            return result
 
-        # Native path: planner + Trace spans + orchestration overhead.
-        if (
+    def _run_inner(
+        self,
+        graph: Graph,
+        input: Any,
+        store: StateStore,
+    ) -> RunResult:
+        active = graph
+        suggested: str | None = None
+        if self.prior is not None:
+            suggested = self.prior.suggest(input, store)
+            active = apply_prior_to_graph(graph, suggested)
+
+        # Embedding-bus prototype: prefer Python path so non-vector ingress
+        # can pass through; measure packing only on vector hops.
+        use_native = (
             _run_graph is not None
             and self.directory.native is not None
             and type(store).__name__ == "StateStore"
-        ):
+            and self.bus.kind() != "embedding"
+        )
+
+        if use_native:
             bus = self.bus if type(self.bus).__name__ == "Bus" else None
             raw = _run_graph(
-                graph.to_dict(),
+                active.to_dict(),
                 input,
                 self.directory.native,
                 state=store,
                 bus=bus,
             )
             metrics = dict(raw["metrics"])
-            # Prefer the native-returned handle (shares Arc with hop writes).
             out_state = raw.get("state") or store
-            return RunResult(output=raw["output"], metrics=metrics, state=out_state)
+            result = RunResult(output=raw["output"], metrics=metrics, state=out_state)
+        else:
+            result = self._run_python(active, input, store)
 
-        return self._run_python(graph, input, store)
+        if self.prior is not None and suggested is not None:
+            result.metrics["prior_suggested"] = suggested
+            result.metrics["prior"] = self.prior.snapshot()
+            winner = _winner_from_result(active, result)
+            if winner is not None:
+                # Feature from the pre-run store (native may return a twin).
+                self.prior.observe(winner, input=input, state=store)
+                result.metrics["prior_observed"] = winner
+                result.metrics["prior"] = self.prior.snapshot()
+        return result
 
     def _run_python(self, graph: Graph, input: Any, state: StateStore) -> RunResult:
         plan = plan_graph(graph)
@@ -204,6 +249,28 @@ class Scheduler:
         state.set("mom.metrics", metrics)
         return RunResult(output=current, metrics=metrics, state=state)
 
+    def _bus_hop(self, value: Any, metrics: dict[str, Any] | None = None) -> Any:
+        """Encode/decode through the hop bus; embedding packs only float vectors."""
+        kind = self.bus.kind()
+        if kind == "embedding":
+            is_vec = (
+                isinstance(value, (list, tuple))
+                and (len(value) == 0 or isinstance(value[0], (int, float)))
+            )
+            if not is_vec:
+                # Text ingress / non-vector: do not mandate embedding packing.
+                return value
+        t0 = time.perf_counter()
+        out = self.bus.decode(self.bus.encode(value))
+        ms = (time.perf_counter() - t0) * 1000.0
+        if metrics is not None:
+            metrics.setdefault("bus_ms", 0.0)
+            metrics["bus_ms"] = float(metrics["bus_ms"]) + ms
+            metrics.setdefault("bus_hops", 0)
+            metrics["bus_hops"] = int(metrics["bus_hops"]) + 1
+            metrics["bus_kind"] = kind
+        return out
+
     def _run_node(
         self,
         node: Any,
@@ -212,11 +279,14 @@ class Scheduler:
         metrics: dict[str, Any],
     ) -> Any:
         model = self.directory.create(node.model_id)
-        payload = self.bus.encode(input)
-        value = self.bus.decode(payload)
-        t0 = time.perf_counter()
-        out = model.run(value, state)
-        ms = (time.perf_counter() - t0) * 1000.0
+        value = self._bus_hop(input, metrics)
+        with self.limiter.model_slot():
+            t0 = time.perf_counter()
+            try:
+                out = model.run(value, state, cancel=None)
+            except TypeError:
+                out = model.run(value, state)
+            ms = (time.perf_counter() - t0) * 1000.0
         kind = (
             "router"
             if "router" in self.directory.get(node.model_id).tags
@@ -244,23 +314,24 @@ class Scheduler:
         router_model = self.directory.create(router_node.model_id)
         prior_model = self.directory.create(prior_node.model_id)
 
-        payload = self.bus.encode(input)
-        value = self.bus.decode(payload)
+        value = self._bus_hop(input, metrics)
         cancel = CancelToken()
 
         def run_router() -> tuple[Any, float]:
-            t0 = time.perf_counter()
-            out = router_model.run(value, state, cancel=None)
-            return out, (time.perf_counter() - t0) * 1000.0
+            with self.limiter.model_slot():
+                t0 = time.perf_counter()
+                out = router_model.run(value, state, cancel=None)
+                return out, (time.perf_counter() - t0) * 1000.0
 
         def run_prior() -> tuple[Any, float]:
-            t0 = time.perf_counter()
-            try:
-                out = prior_model.run(value, state, cancel=cancel)
-            except CancelledError:
-                ms = (time.perf_counter() - t0) * 1000.0
-                return ("__cancelled__", ms)
-            return out, (time.perf_counter() - t0) * 1000.0
+            with self.limiter.model_slot():
+                t0 = time.perf_counter()
+                try:
+                    out = prior_model.run(value, state, cancel=cancel)
+                except CancelledError:
+                    ms = (time.perf_counter() - t0) * 1000.0
+                    return ("__cancelled__", ms)
+                return out, (time.perf_counter() - t0) * 1000.0
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             fut_prior = pool.submit(run_prior)
@@ -327,6 +398,29 @@ class Scheduler:
         return Node(name=route, model_id=route)
 
 
+def _winner_from_result(graph: Graph, result: RunResult) -> str | None:
+    """Best-effort actual winner (model id) after a speculative hop."""
+    spec = result.metrics.get("spec") or {}
+    if not spec:
+        return None
+    # Prefer model id on the final output when present.
+    out = result.output
+    if isinstance(out, dict) and isinstance(out.get("model"), str):
+        return out["model"]
+    # Fall back: on hit use speculated node’s model; on miss use route if known.
+    for router_name, outcome in spec.items():
+        pairs = [(e.frm, e.to) for e in graph.edges if e.kind == "speculate"]
+        prior_name = next((p for r, p in pairs if r == router_name), None)
+        if prior_name is None:
+            continue
+        if outcome == "hit":
+            try:
+                return graph.node(prior_name).model_id
+            except KeyError:
+                return prior_name
+    return None
+
+
 def run(
     graph: Graph,
     input: Any,
@@ -334,6 +428,10 @@ def run(
     *,
     state: StateStore | None = None,
     bus: Bus | None = None,
+    limits: ConcurrencyLimits | Limiter | None = None,
+    prior: LightPrior | None = None,
 ) -> RunResult:
     """Single external call — feels like one model."""
-    return Scheduler(directory, bus=bus).run(graph, input, state)
+    return Scheduler(directory, bus=bus, limits=limits, prior=prior).run(
+        graph, input, state
+    )

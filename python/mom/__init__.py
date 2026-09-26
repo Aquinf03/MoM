@@ -10,6 +10,8 @@ from mom.bus import Bus, Payload
 from mom.cancel import CancelToken, CancelledError
 from mom.directory import ModelDirectory
 from mom.graph import Graph
+from mom.limits import ConcurrencyLimits, LimitExceeded, Limiter
+from mom.prior import LightPrior, apply_prior_to_graph
 from mom.scheduler import RunResult, Scheduler, plan_graph, run
 from mom.session import Session
 from mom.state import StateStore
@@ -38,7 +40,11 @@ __all__ = [
     "Bus",
     "CancelToken",
     "CancelledError",
+    "ConcurrencyLimits",
     "Graph",
+    "LightPrior",
+    "LimitExceeded",
+    "Limiter",
     "ModelDirectory",
     "NATIVE",
     "Payload",
@@ -49,6 +55,7 @@ __all__ = [
     "__version__",
     "add_assistant",
     "add_user",
+    "apply_prior_to_graph",
     "core_version",
     "get_messages",
     "ping",

@@ -7,6 +7,8 @@ from typing import Any
 from mom.bus import Bus
 from mom.directory import ModelDirectory
 from mom.graph import Graph
+from mom.limits import ConcurrencyLimits, Limiter
+from mom.prior import LightPrior
 from mom.scheduler import RunResult, run
 from mom.state import StateStore
 from mom.turn import add_assistant, add_user, get_messages, turn_count
@@ -38,11 +40,15 @@ class Session:
         *,
         state: StateStore | None = None,
         bus: Bus | None = None,
+        limits: ConcurrencyLimits | Limiter | None = None,
+        prior: LightPrior | None = None,
     ) -> None:
         self.directory = directory
         self.graph = graph
         self.state = state or StateStore()
         self.bus = bus
+        self.limits = limits
+        self.prior = prior
 
     @property
     def messages(self) -> list[dict[str, Any]]:
@@ -61,6 +67,8 @@ class Session:
             self.directory,
             state=self.state,
             bus=self.bus,
+            limits=self.limits,
+            prior=self.prior,
         )
         # Native run may return a twin StateStore handle that holds the writes.
         if result.state is not None:

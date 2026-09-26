@@ -5,4 +5,5 @@
 3. Add the module path to `_SEED` in `models/__init__.py` **or** call `register(...)` yourself.
 4. Wire it into any `Graph` by id — `.add("node", "my.id")` — no changes to `mom-core` or the scheduler.
 
-Same interface for classifiers, SLMs, LLMs, embedders, tools, transforms, …
+Same interface for classifiers, SLMs, LLMs, embedders, vision, ASR/TTS, retrievers, tools, …
+Graphs only reference directory ids — add a size/vendor variant the same way.
