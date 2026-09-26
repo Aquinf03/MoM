@@ -1,13 +1,11 @@
 # MoM Python SDK
 
-Install from the repo (requires Rust toolchain + maturin):
+Install from the **repo root** (see root README for full build instructions):
 
 ```bash
-cd python
-python3 -m venv ../.venv && source ../.venv/bin/activate
-pip install maturin
-maturin develop
-# or: pip install -e .
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cd python && maturin develop && cd ..
 mom-ping
 ```
 

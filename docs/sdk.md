@@ -5,14 +5,16 @@ Installable Python package for latency-transparent composition of arbitrary mode
 ## Install (from repo)
 
 ```bash
-# Rust + venv once
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# Rust once: https://rustup.rs  (`rustc --version`)
 cd /path/to/mom
 python3 -m venv .venv && source .venv/bin/activate
-pip install maturin
-cd python && maturin develop
+pip install -r requirements.txt          # maturin
+pip install -r requirements-dev.txt      # optional: pytest
+cd python && maturin develop && cd ..
 mom-ping
 ```
+
+Full steps (rebuild, uninstall, tests): see the root [`README.md`](../README.md#build--install).
 
 Editable install also works after maturin has built the extension:
 

@@ -1,0 +1,4 @@
+# Dev / test extras (optional)
+-r requirements.txt
+pytest>=7.0
+pytest-xdist>=3.0

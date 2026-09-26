@@ -54,26 +54,128 @@ one external run()  ← feels like a single model
 ## Layout
 
 ```
-crates/mom-core/   Rust hot path (state, scheduler, timing)
-crates/mom-py/     PyO3 cdylib → mom._native
-python/mom/        Python package (adapters, directory, graph DSL)
-models/            Drop-in catalog — any model kind registers here
-examples/          Runnable demos
-bench/             Latency / seamlessness harnesses
+crates/mom-core/     Rust hot path (state, scheduler, timing)
+crates/mom-py/       PyO3 cdylib → mom._native
+python/mom/          Python SDK (adapters, directory, graph DSL)
+models/              Drop-in catalog — any model kind registers here
+examples/            Runnable demos
+bench/               Latency / seamlessness harnesses
+tests/               Production-grade SDK matrix (pytest)
+docs/                SDK / adapter / latency docs
+requirements.txt     Build/install Python deps
+requirements-dev.txt Test extras (pytest)
 ```
+
+## Prerequisites
+
+| Tool | Version | Notes |
+| --- | --- | --- |
+| Python | ≥ 3.10 | 3.10–3.14 tested |
+| Rust | stable via [rustup](https://rustup.rs) | needed to compile `mom._native` |
+| pip / venv | stdlib | |
+
+macOS / Linux / Windows (MSVC + rustup) should work; examples below use a Unix shell.
+
+## Build & install
+
+From the **repo root**:
 
 ```bash
-# One-time: Rust (rustup) + project venv + SDK install
+# 1) Rust (skip if `rustc --version` already works)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-python3 -m venv .venv && source .venv/bin/activate
-pip install maturin
-cd python && maturin develop && cd ..
+# restart the shell or: source "$HOME/.cargo/env"
+rustc --version
+
+# 2) Clone & venv
+git clone https://github.com/aquinlabs/mom.git
+cd mom
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+# 3) Python build deps
+pip install --upgrade pip
+pip install -r requirements.txt           # maturin
+# optional, for pytest matrix:
+pip install -r requirements-dev.txt
+
+# 4) Build the Rust extension and install the `mom` SDK (editable)
+cd python
+maturin develop
+cd ..
+
+# 5) Sanity check
 mom-ping
-python examples/hello_mom.py
-python bench/prod_matrix.py    # production-grade SDK matrix
+python -c "import mom; print(mom.__version__, mom.NATIVE, mom.ping())"
 ```
 
-Docs: [`docs/sdk.md`](./docs/sdk.md) · [`docs/adapter_guide.md`](./docs/adapter_guide.md) · [`docs/concepts.md`](./docs/concepts.md)
+`maturin develop` compiles `crates/mom-py` → `mom._native` and installs the `mom` package into the active venv (editable). Equivalent after a successful develop:
+
+```bash
+cd python && pip install -e ".[dev]" && cd ..
+```
+
+### Rebuild after Rust/Python changes
+
+```bash
+source .venv/bin/activate
+cd python && maturin develop && cd ..
+```
+
+### Uninstall
+
+```bash
+pip uninstall mom
+```
+
+## Quick start
+
+```bash
+source .venv/bin/activate
+python examples/hello_mom.py
+```
+
+```python
+from mom import Graph, ModelDirectory, StateStore, run
+
+directory = ModelDirectory()
+
+class Echo:
+    def run(self, input, state, cancel=None):
+        return {"text": str(input), "model": "echo"}
+
+directory.register("echo", lambda: Echo(), tags={"generator"})
+result = run(Graph().add("g", "echo"), "hello", directory, state=StateStore())
+print(result.output)
+```
+
+Seed stubs used by demos live under `models/` (add the repo root to `PYTHONPATH` or run examples from the repo as shown — they set paths themselves).
+
+## Verify / test
+
+```bash
+source .venv/bin/activate
+
+# One-command demo
+python examples/hello_mom.py
+
+# Production-grade SDK matrix (needs requirements-dev.txt)
+python bench/prod_matrix.py
+# or: pytest -q
+
+# Pre-SDK / latency gates
+python bench/done_means.py
+python bench/latency_compare.py
+```
+
+## Docs
+
+| Doc | Content |
+| --- | --- |
+| [`docs/sdk.md`](./docs/sdk.md) | Install + stable surface |
+| [`docs/adapter_guide.md`](./docs/adapter_guide.md) | How to add a model |
+| [`docs/concepts.md`](./docs/concepts.md) | Guarantees / non-guarantees |
+| [`docs/latency_hide.md`](./docs/latency_hide.md) | Which graph shapes hide latency |
+| [`docs/speculation_proof.md`](./docs/speculation_proof.md) | Speculate vs single-model baseline |
 
 ## Hard problems (honest)
 
@@ -83,35 +185,24 @@ Docs: [`docs/sdk.md`](./docs/sdk.md) · [`docs/adapter_guide.md`](./docs/adapter
 
 **Latency** — Sequential hops show seams. Hide them with speculation (start the likely winner with the router) and keep routers near noise (low-ms). A heavy “decision LLM” on the critical path collapses the thesis.
 
-**Topology** — Different plugs need different *graphs*, not just different nodes. `GraphRegistry` holds named shapes; `heuristic_select` picks among what’s satisfied by the directory. See [`docs/latency_hide.md`](./docs/latency_hide.md) for which compositions can hide latency.
+**Topology** — Different plugs need different *graphs*, not just different nodes. `GraphRegistry` holds named shapes; `heuristic_select` picks among what’s satisfied by the directory.
 
 ## Success
 
 Orchestration overhead smaller than the natural variance of the model calls themselves — functionally invisible, not literally zero.
 
-**Pre-SDK gates** (re-run anytime):
-
-```bash
-python bench/done_means.py          # catalog width + drop-in + speculate proof + hello
-python examples/hello_mom.py        # one command → colocated composition
-python bench/latency_compare.py     # numbers vs single-SLM baseline
-```
-
-See [`docs/speculation_proof.md`](./docs/speculation_proof.md) and [`docs/latency_hide.md`](./docs/latency_hide.md).
-
 ## Open / deferred
 
 | Topic | Status |
 | --- | --- |
-| Text vs embedding bus | Text default; embedding optional on a hop — tradeoff stands ([`docs/latency_hide.md`](./docs/latency_hide.md)) |
-| Real model weights | Deferred — stubs prove contracts + latency gates; adapters swap in without runtime rewrite |
+| Text vs embedding bus | Text default; embedding optional on a hop |
+| Real model weights | Deferred — stubs prove contracts; adapters swap in without runtime rewrite |
 | Distributed / multi-host state | Deferred — v1 locked colocated |
-| Public SDK package | Shipped from repo (`maturin develop` / `pip install -e python/`) — see [`docs/sdk.md`](./docs/sdk.md) |
 | Second language client | Deferred until contracts stay green under prod matrix |
 
 ## Status
 
-Python SDK installable from the repo; adapter/graph APIs marked stable (`mom.api`). Production matrix green (`bench/prod_matrix.py`). Optional second-language client still deferred.
+Python SDK installable from the repo (`requirements.txt` + `maturin develop`). Adapter/graph APIs marked stable (`mom.api`). Production matrix: `bench/prod_matrix.py`.
 
 ## License
 
