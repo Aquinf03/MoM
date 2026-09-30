@@ -43,37 +43,51 @@ def _env_int(name: str, default: int) -> int:
         raise ConfigError(f"env {name} must be an int, got {v!r}") from e
 
 
+# Sensible small defaults — Hub ids; override with paths anytime.
+_DEFAULT_FAST = "HuggingFaceTB/SmolLM2-135M-Instruct"
+_DEFAULT_STRONG = "HuggingFaceTB/SmolLM2-360M-Instruct"
+_DEFAULT_EMBED = "sentence-transformers/all-MiniLM-L6-v2"
+
+
 @dataclass(frozen=True)
 class Settings:
     """
     Production settings. Load via `Settings.from_env()`.
 
-    Prefer local OpenAI-compatible servers (Ollama / vLLM) for colocated latency;
-    cloud keys are optional fallbacks behind the same adapters.
+    Primary backend is **local**: Hugging Face Hub ids or filesystem paths
+    under `weights_dir`. Optional `backend=http` keeps OpenAI-compatible /
+    Anthropic adapters for external APIs.
     """
 
     weights_dir: Path = field(default_factory=lambda: Path("./weights"))
-    prefer_local: bool = True
+    backend: str = "local"  # local | http
     log_level: str = "INFO"
     log_json: bool = False
 
-    # HTTP / adapters
+    # Local / HF sources (Hub id OR path)
+    chat_fast_source: str = _DEFAULT_FAST
+    chat_strong_source: str = _DEFAULT_STRONG
+    embed_source: str = _DEFAULT_EMBED
+    router_source: str | None = None  # None → heuristic-only router
+    hf_token: str | None = None
+    hf_revision: str | None = None
+    device: str = "auto"
+    dtype: str = "auto"
+    max_new_tokens: int = 256
+
+    # HTTP / adapters (optional backend=http)
     http_timeout_s: float = 60.0
     http_connect_timeout_s: float = 10.0
     http_max_retries: int = 2
-
-    # OpenAI-compatible (OpenAI cloud OR Ollama/vLLM)
+    prefer_local: bool = True  # only for backend=http
     openai_api_key: str | None = None
     openai_base_url: str = "https://api.openai.com/v1"
     openai_chat_model: str = "gpt-4o-mini"
     openai_embed_model: str = "text-embedding-3-small"
-    # Local OpenAI-compatible (Ollama default)
     local_openai_base_url: str = "http://127.0.0.1:11434/v1"
     local_openai_api_key: str = "ollama"
     local_chat_model: str = "llama3.2"
     local_embed_model: str = "nomic-embed-text"
-
-    # Anthropic
     anthropic_api_key: str | None = None
     anthropic_base_url: str = "https://api.anthropic.com"
     anthropic_model: str = "claude-3-5-haiku-latest"
@@ -91,14 +105,27 @@ class Settings:
     @classmethod
     def from_env(cls) -> Settings:
         weights = Path(_env("MOM_WEIGHTS_DIR", "./weights") or "./weights")
+        backend = (_env("MOM_BACKEND", "local") or "local").lower()
+        if backend not in ("local", "http"):
+            raise ConfigError(f"MOM_BACKEND must be 'local' or 'http', got {backend!r}")
         return cls(
             weights_dir=weights,
-            prefer_local=_env_bool("MOM_PREFER_LOCAL", True),
+            backend=backend,
             log_level=(_env("MOM_LOG_LEVEL", "INFO") or "INFO").upper(),
             log_json=_env_bool("MOM_LOG_JSON", False),
+            chat_fast_source=_env("MOM_CHAT_FAST", _DEFAULT_FAST) or _DEFAULT_FAST,
+            chat_strong_source=_env("MOM_CHAT_STRONG", _DEFAULT_STRONG) or _DEFAULT_STRONG,
+            embed_source=_env("MOM_EMBED", _DEFAULT_EMBED) or _DEFAULT_EMBED,
+            router_source=_env("MOM_ROUTER"),
+            hf_token=_env("HF_TOKEN") or _env("HUGGING_FACE_HUB_TOKEN"),
+            hf_revision=_env("MOM_HF_REVISION"),
+            device=(_env("MOM_DEVICE", "auto") or "auto").lower(),
+            dtype=(_env("MOM_DTYPE", "auto") or "auto").lower(),
+            max_new_tokens=_env_int("MOM_MAX_NEW_TOKENS", 256),
             http_timeout_s=_env_float("MOM_HTTP_TIMEOUT_S", 60.0),
             http_connect_timeout_s=_env_float("MOM_HTTP_CONNECT_TIMEOUT_S", 10.0),
             http_max_retries=_env_int("MOM_HTTP_MAX_RETRIES", 2),
+            prefer_local=_env_bool("MOM_PREFER_LOCAL", True),
             openai_api_key=_env("OPENAI_API_KEY"),
             openai_base_url=_env("OPENAI_BASE_URL", "https://api.openai.com/v1")
             or "https://api.openai.com/v1",
@@ -130,11 +157,11 @@ class Settings:
         if self.prefer_local:
             return self.local_openai_api_key
         if not self.openai_api_key:
-            raise ConfigError("OPENAI_API_KEY is required when MOM_PREFER_LOCAL=0")
+            raise ConfigError("OPENAI_API_KEY is required when MOM_BACKEND=http and MOM_PREFER_LOCAL=0")
         return self.openai_api_key
 
     def chat_endpoint(self) -> tuple[str, str, str]:
-        """Return (base_url, api_key, model) for chat."""
+        """Return (base_url, api_key, model) for HTTP chat backend."""
         if self.prefer_local:
             return self.local_openai_base_url, self.local_openai_api_key, self.local_chat_model
         key = self.require_openai()

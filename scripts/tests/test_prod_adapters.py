@@ -100,16 +100,28 @@ def test_router_heuristic_short_circuits(settings: Settings):
     assert out["reason"] == "heuristic"
 
 
-def test_build_directory_and_registry(settings: Settings, monkeypatch: pytest.MonkeyPatch):
+def test_build_directory_and_registry_http(settings: Settings, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("MOM_BACKEND", "http")
     monkeypatch.setenv("MOM_PREFER_LOCAL", "1")
     monkeypatch.setenv("MOM_LOCAL_OPENAI_BASE_URL", "http://llm.test/v1")
-    d = build_directory(settings)
+    http_settings = Settings(
+        backend="http",
+        prefer_local=True,
+        local_openai_base_url="http://llm.test/v1",
+        local_openai_api_key="test-key",
+        local_chat_model="test-model",
+        local_embed_model="test-embed",
+        http_timeout_s=5.0,
+        http_max_retries=0,
+    )
+    d = build_directory(http_settings)
     assert ID_CHAT_FAST in d
     assert ID_CHAT_STRONG in d
     reg = build_registry(d)
     assert "speculate_chat" in reg.available_names(d)
-    h = health_check(d, settings)
+    h = health_check(d, http_settings)
     assert h["models"] >= 3
+    assert h["backend"] == "http"
     assert "version" in h
 
 

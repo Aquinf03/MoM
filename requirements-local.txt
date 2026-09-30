@@ -1,0 +1,6 @@
+# In-process HF / path engines (primary MoM backend)
+-r requirements.txt
+huggingface_hub>=0.24
+transformers>=4.44
+torch>=2.2
+accelerate>=0.33

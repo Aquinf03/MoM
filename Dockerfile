@@ -16,9 +16,10 @@ FROM python:3.12-slim-bookworm
 RUN useradd -m -u 10001 mom
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
-    MOM_PREFER_LOCAL=1 \
+    MOM_BACKEND=local \
     MOM_HOST=0.0.0.0 \
     MOM_PORT=8080 \
+    MOM_WEIGHTS_DIR=/app/weights \
     PYTHONUNBUFFERED=1
 WORKDIR /app
 USER mom

@@ -9,7 +9,7 @@
 ```python
 from mom import MoM, Graph
 
-app = MoM()  # env → real backends (Ollama / OpenAI / Anthropic)
+app = MoM()  # env → local HF / path weights (MOM_BACKEND=local)
 
 @app.model("billing.lookup", tags={"tool"})
 class BillingLookup:
@@ -34,6 +34,9 @@ print(app.chat("why was I charged?", graph="support").text)
 Starter product:
 
 ```bash
+pip install -r requirements-local.txt
+cp -n .env.example .env
+# set MOM_CHAT_FAST to a Hub id or ./path/to/weights
 PYTHONPATH=src:scripts/helpers python -m apps.assistant once "What's my ticket status?"
 ```
 
@@ -43,7 +46,7 @@ PYTHONPATH=src:scripts/helpers python -m apps.assistant once "What's my ticket s
 # Prerequisites: Python ≥3.10, Rust via https://rustup.rs
 git clone https://github.com/aquinlabs/mom.git && cd mom
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-dev.txt -r requirements-local.txt
 maturin develop
 mom-ping
 cp .env.example .env

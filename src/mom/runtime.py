@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from mom.adapters.anthropic_chat import AnthropicChatModel
+from mom.adapters.local_chat import LocalChatModel
+from mom.adapters.local_embed import LocalEmbedModel
+from mom.adapters.local_router import LocalRouterModel
 from mom.adapters.openai_chat import OpenAIChatModel
 from mom.adapters.openai_embed import OpenAIEmbedModel
 from mom.adapters.openai_router import OpenAIRouterModel
@@ -24,11 +27,89 @@ ID_ANTHROPIC = "prod.chat.anthropic"
 
 
 def build_directory(settings: Settings | None = None) -> ModelDirectory:
-    """Register real adapters. Optionally merge stub catalog for mixed demos."""
+    """Register production adapters. Default: local HF / path weights."""
     settings = settings or Settings.from_env()
     setup_logging(level=settings.log_level, json_logs=settings.log_json)
-    directory = ModelDirectory()
+    if settings.backend == "local":
+        directory = _build_local_directory(settings)
+    else:
+        directory = _build_http_directory(settings)
 
+    if settings.include_stubs:
+        try:
+            from models import register_builtins
+
+            register_builtins(directory)
+            log.info("merged stub catalog into production directory")
+        except Exception as e:  # noqa: BLE001
+            log.warning("include_stubs set but models package unavailable: %s", e)
+
+    log.info(
+        "production directory ready models=%s backend=%s weights_dir=%s",
+        directory.ids(),
+        settings.backend,
+        settings.weights_dir,
+    )
+    return directory
+
+
+def _build_local_directory(settings: Settings) -> ModelDirectory:
+    directory = ModelDirectory()
+    directory.register(
+        ID_CHAT_FAST,
+        lambda: LocalChatModel(
+            settings.chat_fast_source,
+            settings=settings,
+            model_id=ID_CHAT_FAST,
+        ),
+        tags={"generator", "chat", "production", "local"},
+        modality="text",
+        vendor="huggingface",
+        latency_class="small",
+    )
+    directory.register(
+        ID_CHAT_STRONG,
+        lambda: LocalChatModel(
+            settings.chat_strong_source,
+            settings=settings,
+            model_id=ID_CHAT_STRONG,
+            system="You are a careful, thorough assistant. Prefer correct detailed answers.",
+        ),
+        tags={"generator", "chat", "production", "local"},
+        modality="text",
+        vendor="huggingface",
+        latency_class="large",
+    )
+    directory.register(
+        ID_ROUTER,
+        lambda: LocalRouterModel(
+            candidates=(ID_CHAT_FAST, ID_CHAT_STRONG),
+            settings=settings,
+            model_id=ID_ROUTER,
+            default_route=ID_CHAT_FAST,
+            source=settings.router_source,
+        ),
+        tags={"router", "production", "local"},
+        modality="text",
+        latency_class="cheap",
+    )
+    directory.register(
+        ID_EMBED,
+        lambda: LocalEmbedModel(
+            settings.embed_source,
+            settings=settings,
+            model_id=ID_EMBED,
+        ),
+        tags={"embedder", "production", "local"},
+        modality="embedding",
+        vendor="huggingface",
+    )
+    return directory
+
+
+def _build_http_directory(settings: Settings) -> ModelDirectory:
+    """Optional external APIs — not the primary MoM path."""
+    directory = ModelDirectory()
     base, key, chat_model = settings.chat_endpoint()
     embed_base, embed_key, embed_model = settings.embed_endpoint()
 
@@ -41,12 +122,11 @@ def build_directory(settings: Settings | None = None) -> ModelDirectory:
             settings=settings,
             model_id=ID_CHAT_FAST,
         ),
-        tags={"generator", "chat", "production"},
+        tags={"generator", "chat", "production", "http"},
         modality="text",
         vendor="openai-compatible",
         latency_class="small",
     )
-    # Strong path: Anthropic if keyed, else same endpoint with stronger name hint
     if settings.anthropic_api_key:
         directory.register(
             ID_CHAT_STRONG,
@@ -74,7 +154,7 @@ def build_directory(settings: Settings | None = None) -> ModelDirectory:
                 model_id=ID_CHAT_STRONG,
                 system="You are a careful, thorough assistant. Prefer correct detailed answers.",
             ),
-            tags={"generator", "chat", "production"},
+            tags={"generator", "chat", "production", "http"},
             modality="text",
             vendor="openai-compatible",
             latency_class="large",
@@ -91,7 +171,7 @@ def build_directory(settings: Settings | None = None) -> ModelDirectory:
             model_id=ID_ROUTER,
             default_route=ID_CHAT_FAST,
         ),
-        tags={"router", "production"},
+        tags={"router", "production", "http"},
         modality="text",
         latency_class="cheap",
     )
@@ -104,7 +184,7 @@ def build_directory(settings: Settings | None = None) -> ModelDirectory:
             settings=settings,
             model_id=ID_EMBED,
         ),
-        tags={"embedder", "production"},
+        tags={"embedder", "production", "http"},
         modality="embedding",
     )
     if settings.anthropic_api_key and ID_ANTHROPIC not in directory:
@@ -122,21 +202,6 @@ def build_directory(settings: Settings | None = None) -> ModelDirectory:
             modality="text",
             vendor="anthropic",
         )
-
-    if settings.include_stubs:
-        try:
-            from models import register_builtins
-
-            register_builtins(directory)
-            log.info("merged stub catalog into production directory")
-        except Exception as e:  # noqa: BLE001
-            log.warning("include_stubs set but models package unavailable: %s", e)
-
-    log.info(
-        "production directory ready models=%s prefer_local=%s",
-        directory.ids(),
-        settings.prefer_local,
-    )
     return directory
 
 

@@ -22,4 +22,5 @@ Keep `MOM_INCLUDE_STUBS=0` unless running latency harnesses.
 
 ### Add a production adapter
 
-Implement under `src/mom/adapters/` and register in `mom.runtime.build_directory`.
+Prefer local HF / path engines under `src/mom/adapters/local_*.py`.
+Register in `mom.runtime.build_directory`. HTTP adapters are optional (`MOM_BACKEND=http`).

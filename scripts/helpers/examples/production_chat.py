@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Production chat via real adapters (OpenAI-compatible local or cloud).
-Requires a reachable backend. Default: Ollama at localhost:11434.
-  cp .env.example .env   # edit as needed
-  ollama pull llama3.2
+Production chat via local Hugging Face / path weights.
+
+  pip install -r requirements-local.txt
+  cp .env.example .env
+  # MOM_CHAT_FAST=HuggingFaceTB/SmolLM2-135M-Instruct
+  # or MOM_CHAT_FAST=./weights/my-model
   python scripts/helpers/examples/production_chat.py
   python scripts/helpers/examples/production_chat.py "explain MoM in one sentence"
 """
@@ -29,7 +31,10 @@ def main() -> None:
     spec = registry.pick(directory, settings.default_graph)
     session = Session(directory, spec.graph, limits=concurrency_limits(settings))
     prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "Say hello in one short sentence."
-    print(f"graph={spec.name} prefer_local={settings.prefer_local} model_endpoint={settings.chat_endpoint()[0]}")
+    print(
+        f"graph={spec.name} backend={settings.backend} "
+        f"fast={settings.chat_fast_source} weights_dir={settings.weights_dir}"
+    )
     result = session.say(prompt)
     print(f"output: {result.output}")
     print(

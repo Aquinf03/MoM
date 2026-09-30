@@ -9,8 +9,9 @@ This is what "use MoM to build full-fledged crap" means:
 
 Run:
 
-  # need a local OpenAI-compatible server (Ollama) or cloud keys in .env
-  python -m apps.assistant            # REPL (from repo root; helpers on path)
+  pip install -r requirements-local.txt
+  cp -n .env.example .env   # MOM_CHAT_FAST = Hub id or path
+  python -m apps.assistant            # REPL
   python -m apps.assistant serve      # HTTP on MOM_PORT
   python -m apps.assistant once "hi"
   # or: PYTHONPATH=scripts/helpers:src python -m apps.assistant once "hi"
@@ -64,7 +65,7 @@ class TicketTool:
 
 def build_product() -> MoM:
     """Assemble the assistant product on top of MoM."""
-    app = MoM()  # production adapters from env (Ollama / OpenAI / Anthropic)
+    app = MoM()  # local HF / path adapters from env
 
     # Your stuff — not stubs
     app.register("app.ticket", TicketTool, tags={"tool", "product"}, modality="tool")
@@ -122,13 +123,15 @@ def main(argv: list[str] | None = None) -> None:
         try:
             reply = app.chat(msg, graph="support")
         except Exception as e:  # noqa: BLE001
-            from mom.errors import AdapterError, AdapterTimeout
+            from mom.errors import AdapterError, AdapterTimeout, ConfigError
 
-            if isinstance(e, (AdapterError, AdapterTimeout, OSError, ConnectionError)):
+            if isinstance(e, (AdapterError, AdapterTimeout, ConfigError, OSError, ConnectionError)):
                 print(
-                    "Backend unreachable. Start a local server or set cloud keys:\n"
-                    "  ollama serve && ollama pull llama3.2\n"
-                    "  # or MOM_PREFER_LOCAL=0 and OPENAI_API_KEY=...\n"
+                    "Local model unavailable. Install engines and point at Hub id or path:\n"
+                    "  pip install -r requirements-local.txt\n"
+                    "  cp -n .env.example .env\n"
+                    "  # MOM_CHAT_FAST=HuggingFaceTB/SmolLM2-135M-Instruct\n"
+                    "  # or MOM_CHAT_FAST=./weights/my-model\n"
                     f"Detail: {e}",
                     file=sys.stderr,
                 )
