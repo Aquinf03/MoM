@@ -1,4 +1,5 @@
-# MoM — build & install (Python side)
-# Rust toolchain is also required: https://rustup.rs
+# MoM — build + production runtime deps
+# Rust toolchain also required: https://rustup.rs
 
 maturin>=1.8,<2.0
+httpx>=0.27,<1

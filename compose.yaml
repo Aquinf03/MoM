@@ -1,0 +1,25 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  mom:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      MOM_PREFER_LOCAL: "1"
+      MOM_LOCAL_OPENAI_BASE_URL: http://ollama:11434/v1
+      MOM_LOCAL_OPENAI_API_KEY: ollama
+      MOM_LOCAL_CHAT_MODEL: llama3.2
+      MOM_LOG_JSON: "1"
+      MOM_HOST: 0.0.0.0
+      MOM_PORT: "8080"
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:

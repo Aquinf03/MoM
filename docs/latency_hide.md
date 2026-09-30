@@ -39,6 +39,6 @@ Miss path on speculate is *correct* but not hidden: you pay prior waste (mitigat
 
 ## Measuring
 
-Use `bench/latency_compare.py` for speculate hit/miss vs single-SLM, and
-`bench/topology_smoke.py` for registry / fan-out wave timing. Pass criterion
+Use `scripts/helpers/bench/latency_compare.py` for speculate hit/miss vs single-SLM, and
+`scripts/helpers/bench/topology_smoke.py` for registry / fan-out wave timing. Pass criterion
 remains: orchestration overhead ≪ natural model variance on the demo path.

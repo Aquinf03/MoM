@@ -55,4 +55,4 @@ Graph().add("gen", "vendor.my_model")
 
 ## Repo catalog pattern
 
-The `models/` directory in this repo is a drop-in catalog of stubs. Copy the pattern for real weights; the SDK does not hardcode those modules.
+The `src/models/` directory in this repo is a drop-in catalog of stubs. Copy the pattern for real weights; the SDK does not hardcode those modules.

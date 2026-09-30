@@ -4,7 +4,7 @@ Proof lives in the harness (re-run anytime):
 
 ```bash
 source .venv/bin/activate
-python bench/latency_compare.py --rounds 30
+python scripts/helpers/bench/latency_compare.py --rounds 30
 ```
 
 ## What is compared
@@ -25,6 +25,6 @@ When those three print `PASS` and `overall: PASS`, speculative routing is proven
 
 ## Related
 
-- Tone/judgment: `bench/tone_smoke.py`
-- Cancel on miss: `bench/cancel_smoke.py`
+- Tone/judgment: `scripts/helpers/bench/tone_smoke.py`
+- Cancel on miss: `scripts/helpers/bench/cancel_smoke.py`
 - Which shapes can hide latency: [`latency_hide.md`](./latency_hide.md)
