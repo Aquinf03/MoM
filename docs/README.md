@@ -1,14 +1,12 @@
-# MoM docs (GitHub Pages)
+# MoM docs
 
-Same chrome as other Aquin Labs docs.
+SDK documentation (same chrome as other Aquin Labs docs).
 
 ```
 docs/
-  documentation/   # product docs
-  assets/          # CSS, logo, favicon
-  index.html       # redirects → documentation/
+  documentation/   # Getting started, Install, CLI, SDK, Graphs, Adapters, Limits
+  assets/
+  index.html       # → documentation/
 ```
 
-**Edit HTML under `documentation/`.** Markdown notes (`concepts.md`, `adapter_guide.md`, …) remain as repo text.
-
-GitHub: https://github.com/aquinlabs/mom
+Regenerate HTML: `python docs/_gen.py`

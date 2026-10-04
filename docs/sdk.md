@@ -11,7 +11,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt          # maturin
 pip install -r requirements-dev.txt      # optional: pytest
 cd python && maturin develop && cd ..
-mom-ping
+mom version
 ```
 
 Full steps (rebuild, uninstall, tests): see the root [`README.md`](../README.md#build--install).

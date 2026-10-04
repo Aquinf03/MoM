@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Getting started · MoM Docs</title>
-  <meta name="description" content="MoM is a composition runtime: plug in any models, wire graphs, one call surface." />
+  <meta name="description" content="MoM SDK: register models, wire graphs, one run() that feels like a single model." />
   <link rel="icon" href="../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link active" href="./">Getting started</a>
 <a class="nav-link" href="install/">Install</a>
+<a class="nav-link" href="cli/">CLI</a>
 <a class="nav-link" href="sdk/">SDK</a>
 <a class="nav-link" href="graphs/">Graphs</a>
 <a class="nav-link" href="adapters/">Adapters</a>
-<a class="nav-link" href="benches/">Benches</a>
 <a class="nav-link" href="caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -37,52 +37,51 @@
     <main class="docs-main"><article>
   <h1 class="hero">Getting started</h1>
 
-  <p class="lead"><strong>MoM</strong> is a colocated composition runtime. You register models (chat, vision, tools, embeddings), wire them as graphs, and call one <code class="chip">run</code> / <code class="chip">chat</code> that feels like a single model — shared state, speculative routing, measured overhead.</p>
-  <p class="lead">It is not a chatbot toy. Stubs exist only for latency fixtures. Production default is local Hugging Face / path weights.</p>
+  <p class="lead"><strong>mom</strong> is a Python SDK for composing models in-process. You implement <code class="chip">run(input, state)</code>, register an id, wire a <code class="chip">Graph</code>, and call <code class="chip">mom.run</code> (or <code class="chip">MoM().chat</code>). Shared state, speculative routing, timing metrics.</p>
 
   <h2>How the pieces fit</h2>
   <div class="table-wrap mb">
     <table class="plain">
       <thead><tr><th>Name</th><th>What it is</th></tr></thead>
       <tbody>
-        <tr><td class="mono">Model</td><td><code class="chip">run(input, state) → output</code>. Any kind. No modality hierarchy.</td></tr>
-        <tr><td class="mono">ModelDirectory</td><td>id → factory + tags. Graphs only see ids.</td></tr>
-        <tr><td class="mono">Graph</td><td>Nodes are directory ids. Edges are depend or speculate.</td></tr>
-        <tr><td class="mono">StateStore</td><td>Shared in-process memory across hops and turns.</td></tr>
-        <tr><td class="mono">speculate</td><td>Start the likely model with the router. Hit hides router cost. Miss is correct, not hidden.</td></tr>
-        <tr><td class="mono">MoM()</td><td>Product handle: env → local adapters, registry, <code class="chip">chat</code> / HTTP.</td></tr>
+        <tr><td class="mono">Model</td><td>Protocol: <code class="chip">run(input, state, cancel=None)</code>. Any kind.</td></tr>
+        <tr><td class="mono">ModelDirectory</td><td>id → factory. Graphs only see ids.</td></tr>
+        <tr><td class="mono">Graph</td><td><code class="chip">add</code> / <code class="chip">link</code> / <code class="chip">speculate</code>.</td></tr>
+        <tr><td class="mono">StateStore</td><td>Shared memory for hops and turns.</td></tr>
+        <tr><td class="mono">run</td><td>Execute a graph. Returns <code class="chip">RunResult</code>.</td></tr>
+        <tr><td class="mono">Session</td><td>Multi-turn over one store.</td></tr>
+        <tr><td class="mono">MoM</td><td>App handle: directory + registry + <code class="chip">chat</code>.</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>SDK (few lines)</h2>
-  <div class="codeblock" data-shell="1">
-  <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>pip install -r requirements-local.txt</span></span>
-<span class="line"><span class="prompt">$</span><span>cp -n .env.example .env</span></span>
-<span class="line"><span class="prompt">$</span><span>maturin develop</span></span></code></pre>
-</div>
+  <h2>Minimal SDK loop</h2>
   <div class="codeblock" data-shell="0">
   <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span>from mom import MoM, Graph</span></span>
+  <pre><code><span class="line"><span>from mom import Graph, ModelDirectory, StateStore, run</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>app = MoM()</span></span>
+<span class="line"><span>directory = ModelDirectory()</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>print(app.chat("What is 2+2? Reply with only the number.").text)</span></span></code></pre>
+<span class="line"><span>class Echo:</span></span>
+<span class="line"><span>    def run(self, input, state, cancel=None):</span></span>
+<span class="line"><span>        return {"text": str(input), "model": "echo"}</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>directory.register("echo", Echo, tags={"generator"})</span></span>
+<span class="line"><span>result = run(Graph().add("g", "echo"), "hello", directory, state=StateStore())</span></span>
+<span class="line"><span>print(result.output, result.metrics["total_ms"])</span></span></code></pre>
 </div>
-  <p class="lead">That uses <code class="chip">speculate_chat</code>: heuristic router in parallel with the small chat model; hard prompts fall through to the bigger one.</p>
 
-  <h2>Product graph</h2>
+  <h2>App handle</h2>
   <div class="codeblock" data-shell="0">
   <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
   <pre><code><span class="line"><span>from mom import MoM, Graph</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>app = MoM()</span></span>
+<span class="line"><span>app = MoM()  # local adapters from env</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>@app.model("billing.lookup", tags={"tool"})</span></span>
 <span class="line"><span>class BillingLookup:</span></span>
 <span class="line"><span>    def run(self, input, state, cancel=None):</span></span>
-<span class="line"><span>        return {"text": "invoice #9 is unpaid ($42)", "model": "billing.lookup"}</span></span>
+<span class="line"><span>        return {"text": "invoice #9 is unpaid", "model": "billing.lookup"}</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>app.add_graph(</span></span>
 <span class="line"><span>    "support",</span></span>
@@ -93,18 +92,18 @@
 <span class="line"><span>    .link("billing", "router")</span></span>
 <span class="line"><span>    .speculate("router", "gen"),</span></span>
 <span class="line"><span>    requires={"billing.lookup", "prod.router", "prod.chat.fast", "prod.chat.strong"},</span></span>
-<span class="line"><span>    latency_hideable=True,</span></span>
 <span class="line"><span>)</span></span>
 <span class="line"><span>print(app.chat("why was I charged?", graph="support").text)</span></span></code></pre>
 </div>
 
   <h2>Next</h2>
   <ul class="next-list">
-    <li><a href="install/">Install</a> — venv, Rust, local weights</li>
-    <li><a href="sdk/">SDK</a> — run, Session, MoM()</li>
-    <li><a href="graphs/">Graphs</a> — chat, vision, speculate</li>
-    <li><a href="benches/">Benches</a> — proof, cost, vision, TUIs</li>
-    <li><a href="caveats/">Limits</a> — what MoM does and does not hide</li>
+    <li><a href="install/">Install</a> — package + native extension</li>
+    <li><a href="cli/">CLI</a> — mom doctor / models / graphs / run / chat / serve</li>
+    <li><a href="sdk/">SDK</a> — run, Session, MoM, metrics</li>
+    <li><a href="graphs/">Graphs</a> — add, link, speculate, registry</li>
+    <li><a href="adapters/">Adapters</a> — the Model contract</li>
+    <li><a href="caveats/">Limits</a> — what speculate can hide</li>
   </ul>
 
     </article></main>

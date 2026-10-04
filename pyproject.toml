@@ -41,8 +41,9 @@ Documentation = "https://github.com/aquinlabs/mom/tree/main/docs"
 Repository = "https://github.com/aquinlabs/mom"
 
 [project.scripts]
-mom-ping = "mom.__main__:main"
-mom-serve = "mom.server:main"
+mom = "mom.cli:console"
+mom-ping = "mom.cli:ping_main"
+mom-serve = "mom.cli:serve_main"
 
 [tool.maturin]
 manifest-path = "src/crates/mom-py/Cargo.toml"

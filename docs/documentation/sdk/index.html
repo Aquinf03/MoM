@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SDK · MoM Docs</title>
-  <meta name="description" content="Python surface: Graph, ModelDirectory, run, Session, MoM()." />
+  <meta name="description" content="Python API: Graph, ModelDirectory, run, Session, MoM, RunResult." />
   <link rel="icon" href="../../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link" href="../">Getting started</a>
 <a class="nav-link" href="../install/">Install</a>
+<a class="nav-link" href="../cli/">CLI</a>
 <a class="nav-link active" href="../sdk/">SDK</a>
 <a class="nav-link" href="../graphs/">Graphs</a>
 <a class="nav-link" href="../adapters/">Adapters</a>
-<a class="nav-link" href="../benches/">Benches</a>
 <a class="nav-link" href="../caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -37,47 +37,67 @@
     <main class="docs-main"><article>
   <h1>SDK</h1>
 
-  <p class="lead">Prefer <code class="chip">from mom import Graph, ModelDirectory, Session, run</code> and <code class="chip">MoM()</code> for products.</p>
+  <p class="lead">Import from <code class="chip">mom</code>. Stable names are also listed on <code class="chip">mom.api.STABLE_API</code>.</p>
 
-  <section class="tool" id="run">
-    <h3 class="tool-cmd">mom.run</h3>
-    <p class="tool-desc">Execute one graph against a directory. Returns output + timing metrics + the same StateStore.</p>
+  <section class="tool" id="directory">
+    <h3 class="tool-cmd">ModelDirectory</h3>
+    <p class="tool-desc">Register a factory under a string id. Tags and modality are metadata; the hot path only calls <code class="chip">run</code>.</p>
     <div class="codeblock" data-shell="0">
   <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span>from mom import Graph, ModelDirectory, StateStore, run</span></span>
+  <pre><code><span class="line"><span>from mom import ModelDirectory</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>directory = ModelDirectory()</span></span>
-<span class="line"><span></span></span>
-<span class="line"><span>class Echo:</span></span>
-<span class="line"><span>    def run(self, input, state, cancel=None):</span></span>
-<span class="line"><span>        return {"text": str(input), "model": "echo"}</span></span>
-<span class="line"><span></span></span>
-<span class="line"><span>directory.register("echo", Echo, tags={"generator"})</span></span>
-<span class="line"><span>result = run(Graph().add("g", "echo"), "hello", directory, state=StateStore())</span></span>
-<span class="line"><span>print(result.output, result.metrics["total_ms"])</span></span></code></pre>
+<span class="line"><span>directory.register("echo", Echo, tags={"generator"}, modality="text")</span></span></code></pre>
 </div>
   </section>
 
-  <section class="tool" id="mom">
-    <h3 class="tool-cmd">MoM()</h3>
-    <p class="tool-desc">Loads production adapters from env (<code class="chip">build_directory</code>), registers builtin graphs, exposes <code class="chip">chat</code> / <code class="chip">run</code> / HTTP helpers.</p>
+  <section class="tool" id="run">
+    <h3 class="tool-cmd">run / RunResult</h3>
+    <p class="tool-desc"><code class="chip">run(graph, input, directory, state=...)</code> returns <code class="chip">output</code>, <code class="chip">metrics</code>, and <code class="chip">state</code>.</p>
     <div class="codeblock" data-shell="0">
   <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span>from mom import MoM</span></span>
-<span class="line"><span>app = MoM()</span></span>
-<span class="line"><span>reply = app.chat("Say hi in one word.")</span></span>
-<span class="line"><span>print(reply.text, reply.model, reply.total_ms)</span></span></code></pre>
+  <pre><code><span class="line"><span>from mom import Graph, StateStore, run</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>result = run(Graph().add("g", "echo"), "hello", directory, state=StateStore())</span></span>
+<span class="line"><span>result.output</span></span>
+<span class="line"><span>result.metrics["total_ms"]</span></span>
+<span class="line"><span>result.metrics["orchestration_overhead_ms"]</span></span>
+<span class="line"><span>result.metrics.get("spec")  # hit / miss when the graph speculates</span></span></code></pre>
 </div>
   </section>
 
   <section class="tool" id="session">
     <h3 class="tool-cmd">Session</h3>
-    <p class="tool-desc">Multi-turn over one store. History lives in state, not serialized hop messages.</p>
+    <p class="tool-desc">Multi-turn. History is stored on the <code class="chip">StateStore</code>, not passed as hop messages.</p>
+    <div class="codeblock" data-shell="0">
+  <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
+  <pre><code><span class="line"><span>from mom import Session</span></span>
+<span class="line"><span>s = Session(directory, graph)</span></span>
+<span class="line"><span>s.say("hi")</span></span>
+<span class="line"><span>s.say("what did I just say?")</span></span></code></pre>
+</div>
   </section>
 
-  <section class="tool" id="metrics">
-    <h3 class="tool-cmd">Metrics on every run</h3>
-    <p class="tool-desc"><code class="chip">total_ms</code>, <code class="chip">orchestration_overhead_ms</code>, per-node ms, <code class="chip">spec</code> hit/miss. Overhead should stay tiny next to model time.</p>
+  <section class="tool" id="mom">
+    <h3 class="tool-cmd">MoM</h3>
+    <p class="tool-desc">Product handle: loads a directory + graph registry, keeps a default session.</p>
+    <div class="codeblock" data-shell="0">
+  <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
+  <pre><code><span class="line"><span>from mom import MoM</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>app = MoM()</span></span>
+<span class="line"><span>reply = app.chat("hello")</span></span>
+<span class="line"><span>print(reply.text, reply.model, reply.total_ms)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>app.register("my.tool", MyTool, tags={"tool"})</span></span>
+<span class="line"><span>app.add_graph("named", graph, requires={"my.tool"})</span></span>
+<span class="line"><span>app.run("…", graph="named")</span></span></code></pre>
+</div>
+  </section>
+
+  <section class="tool" id="cancel-limits">
+    <h3 class="tool-cmd">CancelToken · Limiter</h3>
+    <p class="tool-desc">Speculative losers get a cancel token. <code class="chip">ConcurrencyLimits</code> cap in-flight runs and model workers.</p>
   </section>
 
     </article></main>

@@ -48,7 +48,8 @@ git clone https://github.com/aquinlabs/mom.git && cd mom
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt -r requirements-local.txt
 maturin develop
-mom-ping
+mom version
+mom doctor
 cp .env.example .env
 ```
 
@@ -62,7 +63,7 @@ scripts/helpers/bench/        Latency / smoke harnesses
 scripts/helpers/examples/     Small demos
 scripts/helpers/apps/         Full products built on MoM
 scripts/tests/                Pytest matrix
-docs/                         Production / adapter / latency docs
+docs/                         SDK documentation
 ```
 
 ## Verify
@@ -73,6 +74,21 @@ python scripts/helpers/bench/prod_matrix.py
 python scripts/helpers/examples/hello_mom.py
 python scripts/helpers/bench/done_means.py
 ```
+
+## CLI
+
+```bash
+mom version
+mom doctor
+mom models
+mom graphs
+mom plan speculate_chat
+mom run "hello" --graph speculate_chat
+mom chat --graph speculate_chat
+mom serve
+```
+
+`mom-ping` and `mom-serve` remain as aliases of `version` and `serve`.
 
 ## Docs
 

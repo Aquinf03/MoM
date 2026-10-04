@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Adapters · MoM Docs</title>
-  <meta name="description" content="One run() contract. Register by id. Local HF, torchvision, optional HTTP." />
+  <meta name="description" content="The Model contract: run(input, state). Register by id." />
   <link rel="icon" href="../../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link" href="../">Getting started</a>
 <a class="nav-link" href="../install/">Install</a>
+<a class="nav-link" href="../cli/">CLI</a>
 <a class="nav-link" href="../sdk/">SDK</a>
 <a class="nav-link" href="../graphs/">Graphs</a>
 <a class="nav-link active" href="../adapters/">Adapters</a>
-<a class="nav-link" href="../benches/">Benches</a>
 <a class="nav-link" href="../caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -37,37 +37,47 @@
     <main class="docs-main"><article>
   <h1>Adapters</h1>
 
-  <p class="lead">No subclass required. Implement <code class="chip">run</code>, register an id, point a graph at it.</p>
-  <div class="codeblock" data-shell="0">
+  <p class="lead">The SDK does not care what the model is. Chat, vision, embeddings, tools — same method.</p>
+
+  <section class="tool" id="contract">
+    <h3 class="tool-cmd">Model.run</h3>
+    <div class="codeblock" data-shell="0">
   <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span>class MyModel:</span></span>
+  <pre><code><span class="line"><span>from mom import ModelDirectory, CancelToken, StateStore</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>class MyModel:</span></span>
 <span class="line"><span>    def run(self, input, state, cancel=None):</span></span>
 <span class="line"><span>        if cancel is not None:</span></span>
 <span class="line"><span>            cancel.check()</span></span>
 <span class="line"><span>        state.set("my.key", "ok")</span></span>
-<span class="line"><span>        return {"text": "...", "model": "vendor.mine"}</span></span>
+<span class="line"><span>        return {"text": "…", "model": "vendor.mine"}</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>directory.register("vendor.mine", lambda: MyModel(), tags={"generator"}, modality="text")</span></span></code></pre>
+<span class="line"><span>directory = ModelDirectory()</span></span>
+<span class="line"><span>directory.register(</span></span>
+<span class="line"><span>    "vendor.mine",</span></span>
+<span class="line"><span>    lambda: MyModel(),</span></span>
+<span class="line"><span>    tags={"generator"},</span></span>
+<span class="line"><span>    modality="text",</span></span>
+<span class="line"><span>)</span></span></code></pre>
 </div>
+    <p class="tool-desc">Common chat/tool shape is a dict with <code class="chip">text</code> and <code class="chip">model</code>. Anything JSON-friendly is allowed. Honor <code class="chip">cancel</code> if you can stop mid-flight.</p>
+  </section>
 
-  <h2>Shipped local adapters</h2>
-  <div class="table-wrap mb">
-    <table class="plain">
-      <thead><tr><th>Id</th><th>What</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">prod.chat.fast / strong</td><td>Causal LM from Hub or path</td></tr>
-        <tr><td class="mono">prod.router</td><td>Heuristic (optional tiny LM)</td></tr>
-        <tr><td class="mono">prod.embed</td><td>Local sentence embeddings</td></tr>
-        <tr><td class="mono">prod.vision.caption</td><td>BLIP captioner</td></tr>
-        <tr><td class="mono">prod.vision.torch</td><td>torchvision ResNet18</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="lead"><code class="chip">src/models/stub_*</code> is fixtures. Speech/ASR in that tree is fake. Real speech = you register Whisper (or similar) the same way.</p>
-
-  <section class="tool" id="rules">
-    <h3 class="tool-cmd">Rules</h3>
-    <p class="tool-desc">New capability = new adapter + register + graph id. Shared state by key. Honor cancel on speculative losers. Common chat shape is <code class="chip">{text, model}</code>.</p>
+  <section class="tool" id="bundled">
+    <h3 class="tool-cmd">Bundled adapters</h3>
+    <p class="tool-desc"><code class="chip">build_directory()</code> registers local HF chat/embed/router and optional vision. You do not have to use them — register your own ids instead.</p>
+    <div class="table-wrap mb">
+      <table class="plain">
+        <thead><tr><th>Id</th><th>Adapter</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">prod.chat.fast / strong</td><td>Local causal LM</td></tr>
+          <tr><td class="mono">prod.router</td><td>Heuristic router</td></tr>
+          <tr><td class="mono">prod.embed</td><td>Local embeddings</td></tr>
+          <tr><td class="mono">prod.vision.caption</td><td>BLIP caption</td></tr>
+          <tr><td class="mono">prod.vision.torch</td><td>torchvision classifier</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
     </article></main>

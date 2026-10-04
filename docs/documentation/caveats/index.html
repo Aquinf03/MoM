@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Limits · MoM Docs</title>
-  <meta name="description" content="What speculative routing can hide, and what it cannot." />
+  <meta name="description" content="SDK non-guarantees: speculate miss, serial graphs, colocated v1." />
   <link rel="icon" href="../../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link" href="../">Getting started</a>
 <a class="nav-link" href="../install/">Install</a>
+<a class="nav-link" href="../cli/">CLI</a>
 <a class="nav-link" href="../sdk/">SDK</a>
 <a class="nav-link" href="../graphs/">Graphs</a>
 <a class="nav-link" href="../adapters/">Adapters</a>
-<a class="nav-link" href="../benches/">Benches</a>
 <a class="nav-link active" href="../caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -37,38 +37,25 @@
     <main class="docs-main"><article>
   <h1>Limits</h1>
 
-  <p class="lead">The thesis is composition that <em>feels</em> like one model. That only holds when extra work fits under overlapped wall time. Other graphs are valid — they just show seams.</p>
+  <p class="lead">The SDK will run any graph you give it. Latency hiding is a property of the shape, not a flag you can set on serial work.</p>
 
-  <h2>Can hide (or already one hop)</h2>
+  <h2>Speculate</h2>
   <div class="table-wrap mb">
     <table class="plain">
-      <thead><tr><th>Shape</th><th>Why</th></tr></thead>
+      <thead><tr><th>Outcome</th><th>SDK behavior</th></tr></thead>
       <tbody>
-        <tr><td>speculate hit</td><td>Router ∥ likely winner. Wall ≈ max(router, prior). Orchestration should stay tiny.</td></tr>
-        <tr><td>single model</td><td>Nothing to hide.</td></tr>
+        <tr><td>hit</td><td>Router and prior overlap. Wall ≈ max of the two. Metrics <code class="chip">spec=hit</code>.</td></tr>
+        <tr><td>miss</td><td>Prior cancelled (best-effort). Routed model runs. Visible extra wall. <code class="chip">spec=miss</code>.</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>Cannot hide</h2>
-  <div class="table-wrap mb">
-    <table class="plain">
-      <thead><tr><th>Shape</th><th>Why</th></tr></thead>
-      <tbody>
-        <tr><td>speculate miss</td><td>Correct route, visible penalty. Cancel the loser; you still pay the true model.</td></tr>
-        <tr><td>serial route</td><td>Router then generator, summed.</td></tr>
-        <tr><td>pipeline</td><td>Each depend hop adds wall. Caption then chat is a pipeline plus speculate on the chat hop only.</td></tr>
-        <tr><td>heavy reconcile</td><td>Fan-out can overlap; the join does not.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h2>Also true</h2>
+  <h2>Not hidden</h2>
   <ul class="lead-list">
-    <li>v1 is colocated. No cross-host shared state.</li>
-    <li>Small models ramble if you do not cap tokens. Fast hop is capped on purpose.</li>
-    <li>ImageNet ResNet on solid color PNGs is a bad specialist. Use BLIP caption for those questions.</li>
-    <li>The TUI that runs MoM then the big model is two jobs. Do not judge speed from that screen.</li>
+    <li><code class="chip">link</code> pipelines — each hop adds wall.</li>
+    <li>Fan-out then reconcile — siblings overlap; the join does not.</li>
+    <li>Cross-host shared state — v1 is colocated.</li>
+    <li>Bit-identical outputs across model versions.</li>
   </ul>
 
     </article></main>

@@ -20,10 +20,10 @@ GH_ICON = (
 NAV = [
     ("Getting started", ""),
     ("Install", "install/"),
+    ("CLI", "cli/"),
     ("SDK", "sdk/"),
     ("Graphs", "graphs/"),
     ("Adapters", "adapters/"),
-    ("Benches", "benches/"),
     ("Limits", "caveats/"),
 ]
 
@@ -147,130 +147,29 @@ def main() -> None:
         page(
             "",
             "Getting started",
-            "MoM is a composition runtime: plug in any models, wire graphs, one call surface.",
+            "MoM SDK: register models, wire graphs, one run() that feels like a single model.",
             hero=True,
             body=f"""
-  <p class="lead"><strong>MoM</strong> is a colocated composition runtime. You register models (chat, vision, tools, embeddings), wire them as graphs, and call one <code class="chip">run</code> / <code class="chip">chat</code> that feels like a single model — shared state, speculative routing, measured overhead.</p>
-  <p class="lead">It is not a chatbot toy. Stubs exist only for latency fixtures. Production default is local Hugging Face / path weights.</p>
+  <p class="lead"><strong>mom</strong> is a Python SDK for composing models in-process. You implement <code class="chip">run(input, state)</code>, register an id, wire a <code class="chip">Graph</code>, and call <code class="chip">mom.run</code> (or <code class="chip">MoM().chat</code>). Shared state, speculative routing, timing metrics.</p>
 
   <h2>How the pieces fit</h2>
   <div class="table-wrap mb">
     <table class="plain">
       <thead><tr><th>Name</th><th>What it is</th></tr></thead>
       <tbody>
-        <tr><td class="mono">Model</td><td><code class="chip">run(input, state) → output</code>. Any kind. No modality hierarchy.</td></tr>
-        <tr><td class="mono">ModelDirectory</td><td>id → factory + tags. Graphs only see ids.</td></tr>
-        <tr><td class="mono">Graph</td><td>Nodes are directory ids. Edges are depend or speculate.</td></tr>
-        <tr><td class="mono">StateStore</td><td>Shared in-process memory across hops and turns.</td></tr>
-        <tr><td class="mono">speculate</td><td>Start the likely model with the router. Hit hides router cost. Miss is correct, not hidden.</td></tr>
-        <tr><td class="mono">MoM()</td><td>Product handle: env → local adapters, registry, <code class="chip">chat</code> / HTTP.</td></tr>
+        <tr><td class="mono">Model</td><td>Protocol: <code class="chip">run(input, state, cancel=None)</code>. Any kind.</td></tr>
+        <tr><td class="mono">ModelDirectory</td><td>id → factory. Graphs only see ids.</td></tr>
+        <tr><td class="mono">Graph</td><td><code class="chip">add</code> / <code class="chip">link</code> / <code class="chip">speculate</code>.</td></tr>
+        <tr><td class="mono">StateStore</td><td>Shared memory for hops and turns.</td></tr>
+        <tr><td class="mono">run</td><td>Execute a graph. Returns <code class="chip">RunResult</code>.</td></tr>
+        <tr><td class="mono">Session</td><td>Multi-turn over one store.</td></tr>
+        <tr><td class="mono">MoM</td><td>App handle: directory + registry + <code class="chip">chat</code>.</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>SDK (few lines)</h2>
-  {shell_block(["pip install -r requirements-local.txt", "cp -n .env.example .env", "maturin develop"])}
-  {py_block('''from mom import MoM, Graph
-
-app = MoM()
-
-print(app.chat("What is 2+2? Reply with only the number.").text)''')}
-  <p class="lead">That uses <code class="chip">speculate_chat</code>: heuristic router in parallel with the small chat model; hard prompts fall through to the bigger one.</p>
-
-  <h2>Product graph</h2>
-  {py_block('''from mom import MoM, Graph
-
-app = MoM()
-
-@app.model("billing.lookup", tags={"tool"})
-class BillingLookup:
-    def run(self, input, state, cancel=None):
-        return {"text": "invoice #9 is unpaid ($42)", "model": "billing.lookup"}
-
-app.add_graph(
-    "support",
-    Graph()
-    .add("billing", "billing.lookup")
-    .add("router", "prod.router")
-    .add("gen", "prod.chat.fast")
-    .link("billing", "router")
-    .speculate("router", "gen"),
-    requires={"billing.lookup", "prod.router", "prod.chat.fast", "prod.chat.strong"},
-    latency_hideable=True,
-)
-print(app.chat("why was I charged?", graph="support").text)''')}
-
-  <h2>Next</h2>
-  <ul class="next-list">
-    <li><a href="install/">Install</a> — venv, Rust, local weights</li>
-    <li><a href="sdk/">SDK</a> — run, Session, MoM()</li>
-    <li><a href="graphs/">Graphs</a> — chat, vision, speculate</li>
-    <li><a href="benches/">Benches</a> — proof, cost, vision, TUIs</li>
-    <li><a href="caveats/">Limits</a> — what MoM does and does not hide</li>
-  </ul>
-""",
-        ),
-    )
-
-    write(
-        "documentation/install/index.html",
-        page(
-            "install/",
-            "Install",
-            "Install MoM from the repo: Python, Rust, maturin, local HF weights.",
-            body=f"""
-  <p class="lead">Install from this repo. No PyPI package yet. Local models need torch + transformers.</p>
-  <div class="prereq"><span class="prereq-label">Prerequisite</span>Python ≥ 3.10 · Rust via rustup · Hugging Face weights or Hub access</div>
-
-  <section class="tool" id="venv">
-    <h3 class="tool-cmd">venv + build</h3>
-    <p class="tool-desc">From the repo root. <code class="chip">maturin develop</code> builds the Rust hot path into <code class="chip">mom._native</code>.</p>
-    {shell_block([
-        "git clone https://github.com/aquinlabs/mom.git && cd mom",
-        "python3 -m venv .venv && source .venv/bin/activate",
-        "pip install -r requirements.txt -r requirements-dev.txt -r requirements-local.txt",
-        "maturin develop",
-        "mom-ping",
-        "cp -n .env.example .env",
-    ])}
-  </section>
-
-  <section class="tool" id="env">
-    <h3 class="tool-cmd">Weights</h3>
-    <p class="tool-desc">Hub ids download under <code class="chip">MOM_WEIGHTS_DIR/hub/…</code>. Paths work too. Default chat pair is SmolLM2 135M / 360M.</p>
-    {shell_block([
-        "export MOM_BACKEND=local",
-        "export MOM_CHAT_FAST=HuggingFaceTB/SmolLM2-135M-Instruct",
-        "export MOM_CHAT_STRONG=HuggingFaceTB/SmolLM2-360M-Instruct",
-        "export MOM_VISION_CAPTION=Salesforce/blip-image-captioning-base",
-        "export MOM_VISION_TORCH=resnet18",
-    ], label="env")}
-  </section>
-
-  <section class="tool" id="check">
-    <h3 class="tool-cmd">Check</h3>
-    {shell_block([
-        "pytest -q",
-        "python scripts/helpers/examples/hello_mom.py",
-    ])}
-  </section>
-""",
-        ),
-    )
-
-    write(
-        "documentation/sdk/index.html",
-        page(
-            "sdk/",
-            "SDK",
-            "Python surface: Graph, ModelDirectory, run, Session, MoM().",
-            body=f"""
-  <p class="lead">Prefer <code class="chip">from mom import Graph, ModelDirectory, Session, run</code> and <code class="chip">MoM()</code> for products.</p>
-
-  <section class="tool" id="run">
-    <h3 class="tool-cmd">mom.run</h3>
-    <p class="tool-desc">Execute one graph against a directory. Returns output + timing metrics + the same StateStore.</p>
-    {py_block('''from mom import Graph, ModelDirectory, StateStore, run
+  <h2>Minimal SDK loop</h2>
+  {py_block('''from mom import Graph, ModelDirectory, StateStore, run
 
 directory = ModelDirectory()
 
@@ -281,25 +180,177 @@ class Echo:
 directory.register("echo", Echo, tags={"generator"})
 result = run(Graph().add("g", "echo"), "hello", directory, state=StateStore())
 print(result.output, result.metrics["total_ms"])''')}
+
+  <h2>App handle</h2>
+  {py_block('''from mom import MoM, Graph
+
+app = MoM()  # local adapters from env
+
+@app.model("billing.lookup", tags={"tool"})
+class BillingLookup:
+    def run(self, input, state, cancel=None):
+        return {"text": "invoice #9 is unpaid", "model": "billing.lookup"}
+
+app.add_graph(
+    "support",
+    Graph()
+    .add("billing", "billing.lookup")
+    .add("router", "prod.router")
+    .add("gen", "prod.chat.fast")
+    .link("billing", "router")
+    .speculate("router", "gen"),
+    requires={"billing.lookup", "prod.router", "prod.chat.fast", "prod.chat.strong"},
+)
+print(app.chat("why was I charged?", graph="support").text)''')}
+
+  <h2>Next</h2>
+  <ul class="next-list">
+    <li><a href="install/">Install</a> — package + native extension</li>
+    <li><a href="cli/">CLI</a> — mom doctor / models / graphs / run / chat / serve</li>
+    <li><a href="sdk/">SDK</a> — run, Session, MoM, metrics</li>
+    <li><a href="graphs/">Graphs</a> — add, link, speculate, registry</li>
+    <li><a href="adapters/">Adapters</a> — the Model contract</li>
+    <li><a href="caveats/">Limits</a> — what speculate can hide</li>
+  </ul>
+""",
+        ),
+    )
+
+    write(
+        "documentation/install/index.html",
+        page(
+            "install/",
+            "Install",
+            "Install the mom Python SDK from the repo.",
+            body=f"""
+  <p class="lead">The SDK is the <code class="chip">mom</code> package. Native graph runner is optional but built by default with maturin. No PyPI release yet.</p>
+  <div class="prereq"><span class="prereq-label">Prerequisite</span>Python ≥ 3.10 · Rust (rustup) for <code class="chip">mom._native</code></div>
+
+  <section class="tool" id="venv">
+    <h3 class="tool-cmd">venv + maturin</h3>
+    <p class="tool-desc">From the repo root. Puts <code class="chip">import mom</code> and the <code class="chip">mom</code> CLI on your environment.</p>
+    {shell_block([
+        "python3 -m venv .venv && source .venv/bin/activate",
+        "pip install -r requirements.txt",
+        "maturin develop",
+        "mom version",
+    ])}
   </section>
 
-  <section class="tool" id="mom">
-    <h3 class="tool-cmd">MoM()</h3>
-    <p class="tool-desc">Loads production adapters from env (<code class="chip">build_directory</code>), registers builtin graphs, exposes <code class="chip">chat</code> / <code class="chip">run</code> / HTTP helpers.</p>
-    {py_block('''from mom import MoM
-app = MoM()
-reply = app.chat("Say hi in one word.")
-print(reply.text, reply.model, reply.total_ms)''')}
+  <section class="tool" id="local">
+    <h3 class="tool-cmd">Local model extras</h3>
+    <p class="tool-desc">Only if you use the bundled HF / torchvision adapters via <code class="chip">MoM()</code> / <code class="chip">build_directory()</code>.</p>
+    {shell_block([
+        "pip install -r requirements-local.txt",
+        "cp -n .env.example .env",
+    ])}
+  </section>
+
+  <section class="tool" id="cli">
+    <h3 class="tool-cmd">mom CLI</h3>
+    <p class="tool-desc">Same SDK, no Python file. See <a href="../cli/">CLI</a>. <code class="chip">mom-ping</code> and <code class="chip">mom-serve</code> still work as aliases.</p>
+    {shell_block(["mom doctor", "mom serve"])}
+  </section>
+""",
+        ),
+    )
+
+    write(
+        "documentation/cli/index.html",
+        page(
+            "cli/",
+            "CLI",
+            "mom doctor, models, graphs, plan, run, chat, serve.",
+            body=f"""
+  <p class="lead">After <code class="chip">maturin develop</code>, the <code class="chip">mom</code> command is the SDK in a terminal. It uses the same directory, registry, and <code class="chip">MoM()</code> handle as Python.</p>
+
+  <section class="tool" id="inspect">
+    <h3 class="tool-cmd">Inspect</h3>
+    {shell_block([
+        "mom version",
+        "mom doctor",
+        "mom models",
+        "mom graphs",
+        "mom plan speculate_chat",
+    ])}
+    <p class="tool-desc"><code class="chip">doctor</code> exits 1 if the process is not ready. Add <code class="chip">--json</code> on any command for machine-readable output. <code class="chip">mom-ping</code> is <code class="chip">mom version</code>.</p>
+  </section>
+
+  <section class="tool" id="run">
+    <h3 class="tool-cmd">Run and chat</h3>
+    {shell_block([
+        'mom run "hello" --graph speculate_chat',
+        "mom chat --graph speculate_chat",
+        "mom run hello --graph-json graph.json --json",
+    ])}
+    <p class="tool-desc">Text goes to stdout; a metrics line (model, total_ms, spec) goes to stderr. <code class="chip">chat</code> without a message is a REPL (<code class="chip">/quit</code> to leave).</p>
+  </section>
+
+  <section class="tool" id="serve">
+    <h3 class="tool-cmd">Serve</h3>
+    {shell_block(["mom serve", "mom serve --host 127.0.0.1 --port 8080"])}
+    <p class="tool-desc"><code class="chip">/v1/run</code>, <code class="chip">/v1/chat</code>, <code class="chip">/health</code>, <code class="chip">/ready</code>. Alias: <code class="chip">mom-serve</code>.</p>
+  </section>
+""",
+        ),
+    )
+
+    write(
+        "documentation/sdk/index.html",
+        page(
+            "sdk/",
+            "SDK",
+            "Python API: Graph, ModelDirectory, run, Session, MoM, RunResult.",
+            body=f"""
+  <p class="lead">Import from <code class="chip">mom</code>. Stable names are also listed on <code class="chip">mom.api.STABLE_API</code>.</p>
+
+  <section class="tool" id="directory">
+    <h3 class="tool-cmd">ModelDirectory</h3>
+    <p class="tool-desc">Register a factory under a string id. Tags and modality are metadata; the hot path only calls <code class="chip">run</code>.</p>
+    {py_block('''from mom import ModelDirectory
+
+directory = ModelDirectory()
+directory.register("echo", Echo, tags={"generator"}, modality="text")''')}
+  </section>
+
+  <section class="tool" id="run">
+    <h3 class="tool-cmd">run / RunResult</h3>
+    <p class="tool-desc"><code class="chip">run(graph, input, directory, state=...)</code> returns <code class="chip">output</code>, <code class="chip">metrics</code>, and <code class="chip">state</code>.</p>
+    {py_block('''from mom import Graph, StateStore, run
+
+result = run(Graph().add("g", "echo"), "hello", directory, state=StateStore())
+result.output
+result.metrics["total_ms"]
+result.metrics["orchestration_overhead_ms"]
+result.metrics.get("spec")  # hit / miss when the graph speculates''')}
   </section>
 
   <section class="tool" id="session">
     <h3 class="tool-cmd">Session</h3>
-    <p class="tool-desc">Multi-turn over one store. History lives in state, not serialized hop messages.</p>
+    <p class="tool-desc">Multi-turn. History is stored on the <code class="chip">StateStore</code>, not passed as hop messages.</p>
+    {py_block('''from mom import Session
+s = Session(directory, graph)
+s.say("hi")
+s.say("what did I just say?")''')}
   </section>
 
-  <section class="tool" id="metrics">
-    <h3 class="tool-cmd">Metrics on every run</h3>
-    <p class="tool-desc"><code class="chip">total_ms</code>, <code class="chip">orchestration_overhead_ms</code>, per-node ms, <code class="chip">spec</code> hit/miss. Overhead should stay tiny next to model time.</p>
+  <section class="tool" id="mom">
+    <h3 class="tool-cmd">MoM</h3>
+    <p class="tool-desc">Product handle: loads a directory + graph registry, keeps a default session.</p>
+    {py_block('''from mom import MoM
+
+app = MoM()
+reply = app.chat("hello")
+print(reply.text, reply.model, reply.total_ms)
+
+app.register("my.tool", MyTool, tags={"tool"})
+app.add_graph("named", graph, requires={"my.tool"})
+app.run("…", graph="named")''')}
+  </section>
+
+  <section class="tool" id="cancel-limits">
+    <h3 class="tool-cmd">CancelToken · Limiter</h3>
+    <p class="tool-desc">Speculative losers get a cancel token. <code class="chip">ConcurrencyLimits</code> cap in-flight runs and model workers.</p>
   </section>
 """,
         ),
@@ -310,44 +361,46 @@ print(reply.text, reply.model, reply.total_ms)''')}
         page(
             "graphs/",
             "Graphs",
-            "Production graph names: speculate chat, vision caption, torchvision.",
+            "Graph.add, link, speculate. Registry of named graphs.",
             body=f"""
-  <p class="lead">Graphs are data. Nodes are directory ids. <code class="chip">link</code> is serial. <code class="chip">speculate</code> overlaps router with the likely generator.</p>
+  <p class="lead">A graph is data: nodes name directory ids, edges are <code class="chip">depend</code> or <code class="chip">speculate</code>. The scheduler plans and runs it.</p>
 
-  <div class="table-wrap mb">
-    <table class="plain">
-      <thead><tr><th>Name</th><th>Shape</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">speculate_chat</td><td>router ∥ small chat; miss → strong</td></tr>
-        <tr><td class="mono">direct_fast / direct_strong</td><td>one chat model</td></tr>
-        <tr><td class="mono">caption_chat</td><td>BLIP caption → speculate chat</td></tr>
-        <tr><td class="mono">caption_strong</td><td>BLIP → always strong (baseline)</td></tr>
-        <tr><td class="mono">torch_chat</td><td>torchvision ResNet → speculate chat</td></tr>
-        <tr><td class="mono">vision_stack</td><td>ResNet → BLIP → speculate chat</td></tr>
-        <tr><td class="mono">direct_caption / direct_torch</td><td>vision hop only</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <section class="tool" id="build">
+    <h3 class="tool-cmd">Graph.add · link · speculate</h3>
+    <p class="tool-desc"><code class="chip">link(a, b)</code> means b waits on a. <code class="chip">speculate(router, prior)</code> starts <code class="chip">prior</code> at the same time as the router. On a route hit, wall ≈ max(router, prior). On a miss, the prior is cancelled and the routed model runs.</p>
+    {py_block('''from mom import Graph
 
-  <section class="tool" id="vision-in">
-    <h3 class="tool-cmd">Vision input</h3>
-    <p class="tool-desc">Real image files. Pass a dict; hops stash <code class="chip">image_path</code> / <code class="chip">caption</code> on the store.</p>
-    {py_block('''from mom import run, StateStore
+g = (
+    Graph()
+    .add("router", "prod.router")
+    .add("gen", "prod.chat.fast")
+    .speculate("router", "gen")
+)
+
+pipe = (
+    Graph()
+    .add("vision", "prod.vision.caption")
+    .add("router", "prod.router")
+    .add("gen", "prod.chat.fast")
+    .link("vision", "router")
+    .speculate("router", "gen")
+)''')}
+  </section>
+
+  <section class="tool" id="registry">
+    <h3 class="tool-cmd">GraphRegistry</h3>
+    <p class="tool-desc">Name a graph, declare required ids, run it with <code class="chip">run_named</code>. <code class="chip">build_registry()</code> ships a few production names over <code class="chip">prod.*</code> ids if those adapters are loaded.</p>
+    {py_block('''from mom import run_named
 from mom.runtime import build_directory, build_registry
 
 d = build_directory()
-g = build_registry(d).get("caption_chat").graph
-out = run(g, {
-    "image": "weights/eval_images/solid_red.png",
-    "text": "What color is this? One word.",
-}, d, state=StateStore())
-print(out.output)''')}
+reg = build_registry(d)
+run_named("speculate_chat", "hello", d, reg)''')}
   </section>
 
-  <section class="tool" id="wire">
-    <h3 class="tool-cmd">Wire your own</h3>
-    {py_block('''from mom import Graph
-Graph().add("caption", "prod.vision.caption").add("router", "prod.router").add("gen", "prod.chat.fast").link("caption", "router").speculate("router", "gen")''')}
+  <section class="tool" id="select">
+    <h3 class="tool-cmd">select_graph</h3>
+    <p class="tool-desc">Optional helper: pick a registered graph from the prompt and what the directory actually has. It does not invent new topology.</p>
   </section>
 """,
         ),
@@ -358,76 +411,46 @@ Graph().add("caption", "prod.vision.caption").add("router", "prod.router").add("
         page(
             "adapters/",
             "Adapters",
-            "One run() contract. Register by id. Local HF, torchvision, optional HTTP.",
+            "The Model contract: run(input, state). Register by id.",
             body=f"""
-  <p class="lead">No subclass required. Implement <code class="chip">run</code>, register an id, point a graph at it.</p>
-  {py_block('''class MyModel:
+  <p class="lead">The SDK does not care what the model is. Chat, vision, embeddings, tools — same method.</p>
+
+  <section class="tool" id="contract">
+    <h3 class="tool-cmd">Model.run</h3>
+    {py_block('''from mom import ModelDirectory, CancelToken, StateStore
+
+class MyModel:
     def run(self, input, state, cancel=None):
         if cancel is not None:
             cancel.check()
         state.set("my.key", "ok")
-        return {"text": "...", "model": "vendor.mine"}
+        return {"text": "…", "model": "vendor.mine"}
 
-directory.register("vendor.mine", lambda: MyModel(), tags={"generator"}, modality="text")''')}
-
-  <h2>Shipped local adapters</h2>
-  <div class="table-wrap mb">
-    <table class="plain">
-      <thead><tr><th>Id</th><th>What</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">prod.chat.fast / strong</td><td>Causal LM from Hub or path</td></tr>
-        <tr><td class="mono">prod.router</td><td>Heuristic (optional tiny LM)</td></tr>
-        <tr><td class="mono">prod.embed</td><td>Local sentence embeddings</td></tr>
-        <tr><td class="mono">prod.vision.caption</td><td>BLIP captioner</td></tr>
-        <tr><td class="mono">prod.vision.torch</td><td>torchvision ResNet18</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="lead"><code class="chip">src/models/stub_*</code> is fixtures. Speech/ASR in that tree is fake. Real speech = you register Whisper (or similar) the same way.</p>
-
-  <section class="tool" id="rules">
-    <h3 class="tool-cmd">Rules</h3>
-    <p class="tool-desc">New capability = new adapter + register + graph id. Shared state by key. Honor cancel on speculative losers. Common chat shape is <code class="chip">{{text, model}}</code>.</p>
-  </section>
-""",
-        ),
-    )
-
-    write(
-        "documentation/benches/index.html",
-        page(
-            "benches/",
-            "Benches",
-            "Proof, cost, vision, live TUIs. Real weights only.",
-            body=f"""
-  <p class="lead">These are the numbers that matter. Do not use the old VLM ImageNet bakeoff as a grade.</p>
-
-  <section class="tool" id="proof">
-    <h3 class="tool-cmd">Text proof</h3>
-    <p class="tool-desc">MoM vs always-small vs always-big on labeled easy/hard prompts. Must beat big on easy speed and mix wall, beat small on hard accuracy.</p>
-    {shell_block(["python scripts/helpers/bench/mom_proof.py --rounds 2 --json results/mom_proof.json"])}
+directory = ModelDirectory()
+directory.register(
+    "vendor.mine",
+    lambda: MyModel(),
+    tags={"generator"},
+    modality="text",
+)''')}
+    <p class="tool-desc">Common chat/tool shape is a dict with <code class="chip">text</code> and <code class="chip">model</code>. Anything JSON-friendly is allowed. Honor <code class="chip">cancel</code> if you can stop mid-flight.</p>
   </section>
 
-  <section class="tool" id="cost">
-    <h3 class="tool-cmd">Cost</h3>
-    <p class="tool-desc">Work = tokens × model size (135M vs 360M). Not dollars. MoM should come in under always-big on an easy-heavy mix.</p>
-    {shell_block(["python scripts/helpers/bench/mom_cost.py --rounds 2 --json results/mom_cost.json"])}
-  </section>
-
-  <section class="tool" id="vision">
-    <h3 class="tool-cmd">Vision</h3>
-    <p class="tool-desc">Real PNGs in <code class="chip">weights/eval_images</code>. Caption+MoM vs caption+big vs torchvision graphs.</p>
-    {shell_block(["python scripts/helpers/bench/vision_proof.py --json results/vision_proof.json"])}
-  </section>
-
-  <section class="tool" id="tui">
-    <h3 class="tool-cmd">Live terminals</h3>
-    {shell_block([
-        "PYTHONPATH=src:scripts/helpers python -m apps.duel",
-        "PYTHONPATH=src:scripts/helpers python -m apps.livebench",
-        "PYTHONPATH=src:scripts/helpers python -m apps.vision",
-    ])}
-    <p class="tool-desc">duel: MoM then big, streaming. livebench: full eval scoreboard. vision: ResNet + BLIP + MoM vs big.</p>
+  <section class="tool" id="bundled">
+    <h3 class="tool-cmd">Bundled adapters</h3>
+    <p class="tool-desc"><code class="chip">build_directory()</code> registers local HF chat/embed/router and optional vision. You do not have to use them — register your own ids instead.</p>
+    <div class="table-wrap mb">
+      <table class="plain">
+        <thead><tr><th>Id</th><th>Adapter</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">prod.chat.fast / strong</td><td>Local causal LM</td></tr>
+          <tr><td class="mono">prod.router</td><td>Heuristic router</td></tr>
+          <tr><td class="mono">prod.embed</td><td>Local embeddings</td></tr>
+          <tr><td class="mono">prod.vision.caption</td><td>BLIP caption</td></tr>
+          <tr><td class="mono">prod.vision.torch</td><td>torchvision classifier</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 """,
         ),
@@ -438,40 +461,27 @@ directory.register("vendor.mine", lambda: MyModel(), tags={"generator"}, modalit
         page(
             "caveats/",
             "Limits",
-            "What speculative routing can hide, and what it cannot.",
+            "SDK non-guarantees: speculate miss, serial graphs, colocated v1.",
             body="""
-  <p class="lead">The thesis is composition that <em>feels</em> like one model. That only holds when extra work fits under overlapped wall time. Other graphs are valid — they just show seams.</p>
+  <p class="lead">The SDK will run any graph you give it. Latency hiding is a property of the shape, not a flag you can set on serial work.</p>
 
-  <h2>Can hide (or already one hop)</h2>
+  <h2>Speculate</h2>
   <div class="table-wrap mb">
     <table class="plain">
-      <thead><tr><th>Shape</th><th>Why</th></tr></thead>
+      <thead><tr><th>Outcome</th><th>SDK behavior</th></tr></thead>
       <tbody>
-        <tr><td>speculate hit</td><td>Router ∥ likely winner. Wall ≈ max(router, prior). Orchestration should stay tiny.</td></tr>
-        <tr><td>single model</td><td>Nothing to hide.</td></tr>
+        <tr><td>hit</td><td>Router and prior overlap. Wall ≈ max of the two. Metrics <code class="chip">spec=hit</code>.</td></tr>
+        <tr><td>miss</td><td>Prior cancelled (best-effort). Routed model runs. Visible extra wall. <code class="chip">spec=miss</code>.</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>Cannot hide</h2>
-  <div class="table-wrap mb">
-    <table class="plain">
-      <thead><tr><th>Shape</th><th>Why</th></tr></thead>
-      <tbody>
-        <tr><td>speculate miss</td><td>Correct route, visible penalty. Cancel the loser; you still pay the true model.</td></tr>
-        <tr><td>serial route</td><td>Router then generator, summed.</td></tr>
-        <tr><td>pipeline</td><td>Each depend hop adds wall. Caption then chat is a pipeline plus speculate on the chat hop only.</td></tr>
-        <tr><td>heavy reconcile</td><td>Fan-out can overlap; the join does not.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h2>Also true</h2>
+  <h2>Not hidden</h2>
   <ul class="lead-list">
-    <li>v1 is colocated. No cross-host shared state.</li>
-    <li>Small models ramble if you do not cap tokens. Fast hop is capped on purpose.</li>
-    <li>ImageNet ResNet on solid color PNGs is a bad specialist. Use BLIP caption for those questions.</li>
-    <li>The TUI that runs MoM then the big model is two jobs. Do not judge speed from that screen.</li>
+    <li><code class="chip">link</code> pipelines — each hop adds wall.</li>
+    <li>Fan-out then reconcile — siblings overlap; the join does not.</li>
+    <li>Cross-host shared state — v1 is colocated.</li>
+    <li>Bit-identical outputs across model versions.</li>
   </ul>
 """,
         ),
@@ -479,20 +489,18 @@ directory.register("vendor.mine", lambda: MyModel(), tags={"generator"}, modalit
 
     write(
         "README.md",
-        """# MoM docs (GitHub Pages)
+        """# MoM docs
 
-Same chrome as other Aquin Labs docs.
+SDK documentation (same chrome as other Aquin Labs docs).
 
 ```
 docs/
-  documentation/   # product docs
-  assets/          # CSS, logo, favicon
-  index.html       # redirects → documentation/
+  documentation/   # Getting started, Install, CLI, SDK, Graphs, Adapters, Limits
+  assets/
+  index.html       # → documentation/
 ```
 
-**Edit HTML under `documentation/`.** Markdown notes (`concepts.md`, `adapter_guide.md`, …) remain as repo text.
-
-GitHub: https://github.com/aquinlabs/mom
+Regenerate HTML: `python docs/_gen.py`
 """,
     )
 

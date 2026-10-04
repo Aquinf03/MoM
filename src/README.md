@@ -7,7 +7,7 @@
 ```bash
 # from repo root
 maturin develop
-mom-ping
+mom version
 ```
 
 Docs: [`../docs/sdk.md`](../docs/sdk.md) · [`../docs/production.md`](../docs/production.md)

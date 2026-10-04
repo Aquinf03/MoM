@@ -154,8 +154,8 @@ def create_app(settings: Settings | None = None):
     return Starlette(routes=routes)
 
 
-def main() -> None:
-    settings = Settings.from_env()
+def main(settings: Settings | None = None) -> None:
+    settings = settings or Settings.from_env()
     try:
         import uvicorn
     except ImportError as e:

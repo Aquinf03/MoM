@@ -77,7 +77,12 @@ class MoM:
         else:
             self.directory = ModelDirectory()
 
-        self.registry = registry or build_registry(self.directory)
+        if registry is not None:
+            self.registry = registry
+        elif load_production:
+            self.registry = build_registry(self.directory)
+        else:
+            self.registry = GraphRegistry()
         if limits is None:
             self.limits: ConcurrencyLimits | Limiter = concurrency_limits(self.settings)
         else:

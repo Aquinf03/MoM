@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Benches · MoM Docs</title>
-  <meta name="description" content="Proof, cost, vision, live TUIs. Real weights only." />
+  <title>CLI · MoM Docs</title>
+  <meta name="description" content="mom doctor, models, graphs, plan, run, chat, serve." />
   <link rel="icon" href="../../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link" href="../">Getting started</a>
 <a class="nav-link" href="../install/">Install</a>
+<a class="nav-link active" href="../cli/">CLI</a>
 <a class="nav-link" href="../sdk/">SDK</a>
 <a class="nav-link" href="../graphs/">Graphs</a>
 <a class="nav-link" href="../adapters/">Adapters</a>
-<a class="nav-link active" href="../benches/">Benches</a>
 <a class="nav-link" href="../caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -35,46 +35,42 @@
       </div>
     </aside>
     <main class="docs-main"><article>
-  <h1>Benches</h1>
+  <h1>CLI</h1>
 
-  <p class="lead">These are the numbers that matter. Do not use the old VLM ImageNet bakeoff as a grade.</p>
+  <p class="lead">After <code class="chip">maturin develop</code>, the <code class="chip">mom</code> command is the SDK in a terminal. It uses the same directory, registry, and <code class="chip">MoM()</code> handle as Python.</p>
 
-  <section class="tool" id="proof">
-    <h3 class="tool-cmd">Text proof</h3>
-    <p class="tool-desc">MoM vs always-small vs always-big on labeled easy/hard prompts. Must beat big on easy speed and mix wall, beat small on hard accuracy.</p>
+  <section class="tool" id="inspect">
+    <h3 class="tool-cmd">Inspect</h3>
     <div class="codeblock" data-shell="1">
   <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>python scripts/helpers/bench/mom_proof.py --rounds 2 --json results/mom_proof.json</span></span></code></pre>
+  <pre><code><span class="line"><span class="prompt">$</span><span>mom version</span></span>
+<span class="line"><span class="prompt">$</span><span>mom doctor</span></span>
+<span class="line"><span class="prompt">$</span><span>mom models</span></span>
+<span class="line"><span class="prompt">$</span><span>mom graphs</span></span>
+<span class="line"><span class="prompt">$</span><span>mom plan speculate_chat</span></span></code></pre>
 </div>
+    <p class="tool-desc"><code class="chip">doctor</code> exits 1 if the process is not ready. Add <code class="chip">--json</code> on any command for machine-readable output. <code class="chip">mom-ping</code> is <code class="chip">mom version</code>.</p>
   </section>
 
-  <section class="tool" id="cost">
-    <h3 class="tool-cmd">Cost</h3>
-    <p class="tool-desc">Work = tokens × model size (135M vs 360M). Not dollars. MoM should come in under always-big on an easy-heavy mix.</p>
+  <section class="tool" id="run">
+    <h3 class="tool-cmd">Run and chat</h3>
     <div class="codeblock" data-shell="1">
   <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>python scripts/helpers/bench/mom_cost.py --rounds 2 --json results/mom_cost.json</span></span></code></pre>
+  <pre><code><span class="line"><span class="prompt">$</span><span>mom run "hello" --graph speculate_chat</span></span>
+<span class="line"><span class="prompt">$</span><span>mom chat --graph speculate_chat</span></span>
+<span class="line"><span class="prompt">$</span><span>mom run hello --graph-json graph.json --json</span></span></code></pre>
 </div>
+    <p class="tool-desc">Text goes to stdout; a metrics line (model, total_ms, spec) goes to stderr. <code class="chip">chat</code> without a message is a REPL (<code class="chip">/quit</code> to leave).</p>
   </section>
 
-  <section class="tool" id="vision">
-    <h3 class="tool-cmd">Vision</h3>
-    <p class="tool-desc">Real PNGs in <code class="chip">weights/eval_images</code>. Caption+MoM vs caption+big vs torchvision graphs.</p>
+  <section class="tool" id="serve">
+    <h3 class="tool-cmd">Serve</h3>
     <div class="codeblock" data-shell="1">
   <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>python scripts/helpers/bench/vision_proof.py --json results/vision_proof.json</span></span></code></pre>
+  <pre><code><span class="line"><span class="prompt">$</span><span>mom serve</span></span>
+<span class="line"><span class="prompt">$</span><span>mom serve --host 127.0.0.1 --port 8080</span></span></code></pre>
 </div>
-  </section>
-
-  <section class="tool" id="tui">
-    <h3 class="tool-cmd">Live terminals</h3>
-    <div class="codeblock" data-shell="1">
-  <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>PYTHONPATH=src:scripts/helpers python -m apps.duel</span></span>
-<span class="line"><span class="prompt">$</span><span>PYTHONPATH=src:scripts/helpers python -m apps.livebench</span></span>
-<span class="line"><span class="prompt">$</span><span>PYTHONPATH=src:scripts/helpers python -m apps.vision</span></span></code></pre>
-</div>
-    <p class="tool-desc">duel: MoM then big, streaming. livebench: full eval scoreboard. vision: ResNet + BLIP + MoM vs big.</p>
+    <p class="tool-desc"><code class="chip">/v1/run</code>, <code class="chip">/v1/chat</code>, <code class="chip">/health</code>, <code class="chip">/ready</code>. Alias: <code class="chip">mom-serve</code>.</p>
   </section>
 
     </article></main>

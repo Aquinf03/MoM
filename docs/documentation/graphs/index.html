@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Graphs · MoM Docs</title>
-  <meta name="description" content="Production graph names: speculate chat, vision caption, torchvision." />
+  <meta name="description" content="Graph.add, link, speculate. Registry of named graphs." />
   <link rel="icon" href="../../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link" href="../">Getting started</a>
 <a class="nav-link" href="../install/">Install</a>
+<a class="nav-link" href="../cli/">CLI</a>
 <a class="nav-link" href="../sdk/">SDK</a>
 <a class="nav-link active" href="../graphs/">Graphs</a>
 <a class="nav-link" href="../adapters/">Adapters</a>
-<a class="nav-link" href="../benches/">Benches</a>
 <a class="nav-link" href="../caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -37,48 +37,50 @@
     <main class="docs-main"><article>
   <h1>Graphs</h1>
 
-  <p class="lead">Graphs are data. Nodes are directory ids. <code class="chip">link</code> is serial. <code class="chip">speculate</code> overlaps router with the likely generator.</p>
+  <p class="lead">A graph is data: nodes name directory ids, edges are <code class="chip">depend</code> or <code class="chip">speculate</code>. The scheduler plans and runs it.</p>
 
-  <div class="table-wrap mb">
-    <table class="plain">
-      <thead><tr><th>Name</th><th>Shape</th></tr></thead>
-      <tbody>
-        <tr><td class="mono">speculate_chat</td><td>router ∥ small chat; miss → strong</td></tr>
-        <tr><td class="mono">direct_fast / direct_strong</td><td>one chat model</td></tr>
-        <tr><td class="mono">caption_chat</td><td>BLIP caption → speculate chat</td></tr>
-        <tr><td class="mono">caption_strong</td><td>BLIP → always strong (baseline)</td></tr>
-        <tr><td class="mono">torch_chat</td><td>torchvision ResNet → speculate chat</td></tr>
-        <tr><td class="mono">vision_stack</td><td>ResNet → BLIP → speculate chat</td></tr>
-        <tr><td class="mono">direct_caption / direct_torch</td><td>vision hop only</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <section class="tool" id="vision-in">
-    <h3 class="tool-cmd">Vision input</h3>
-    <p class="tool-desc">Real image files. Pass a dict; hops stash <code class="chip">image_path</code> / <code class="chip">caption</code> on the store.</p>
-    <div class="codeblock" data-shell="0">
-  <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span>from mom import run, StateStore</span></span>
-<span class="line"><span>from mom.runtime import build_directory, build_registry</span></span>
-<span class="line"><span></span></span>
-<span class="line"><span>d = build_directory()</span></span>
-<span class="line"><span>g = build_registry(d).get("caption_chat").graph</span></span>
-<span class="line"><span>out = run(g, {</span></span>
-<span class="line"><span>    "image": "weights/eval_images/solid_red.png",</span></span>
-<span class="line"><span>    "text": "What color is this? One word.",</span></span>
-<span class="line"><span>}, d, state=StateStore())</span></span>
-<span class="line"><span>print(out.output)</span></span></code></pre>
-</div>
-  </section>
-
-  <section class="tool" id="wire">
-    <h3 class="tool-cmd">Wire your own</h3>
+  <section class="tool" id="build">
+    <h3 class="tool-cmd">Graph.add · link · speculate</h3>
+    <p class="tool-desc"><code class="chip">link(a, b)</code> means b waits on a. <code class="chip">speculate(router, prior)</code> starts <code class="chip">prior</code> at the same time as the router. On a route hit, wall ≈ max(router, prior). On a miss, the prior is cancelled and the routed model runs.</p>
     <div class="codeblock" data-shell="0">
   <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
   <pre><code><span class="line"><span>from mom import Graph</span></span>
-<span class="line"><span>Graph().add("caption", "prod.vision.caption").add("router", "prod.router").add("gen", "prod.chat.fast").link("caption", "router").speculate("router", "gen")</span></span></code></pre>
+<span class="line"><span></span></span>
+<span class="line"><span>g = (</span></span>
+<span class="line"><span>    Graph()</span></span>
+<span class="line"><span>    .add("router", "prod.router")</span></span>
+<span class="line"><span>    .add("gen", "prod.chat.fast")</span></span>
+<span class="line"><span>    .speculate("router", "gen")</span></span>
+<span class="line"><span>)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>pipe = (</span></span>
+<span class="line"><span>    Graph()</span></span>
+<span class="line"><span>    .add("vision", "prod.vision.caption")</span></span>
+<span class="line"><span>    .add("router", "prod.router")</span></span>
+<span class="line"><span>    .add("gen", "prod.chat.fast")</span></span>
+<span class="line"><span>    .link("vision", "router")</span></span>
+<span class="line"><span>    .speculate("router", "gen")</span></span>
+<span class="line"><span>)</span></span></code></pre>
 </div>
+  </section>
+
+  <section class="tool" id="registry">
+    <h3 class="tool-cmd">GraphRegistry</h3>
+    <p class="tool-desc">Name a graph, declare required ids, run it with <code class="chip">run_named</code>. <code class="chip">build_registry()</code> ships a few production names over <code class="chip">prod.*</code> ids if those adapters are loaded.</p>
+    <div class="codeblock" data-shell="0">
+  <div class="codeblock-bar"><span>python</span><button type="button" class="copy-btn">Copy</button></div>
+  <pre><code><span class="line"><span>from mom import run_named</span></span>
+<span class="line"><span>from mom.runtime import build_directory, build_registry</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>d = build_directory()</span></span>
+<span class="line"><span>reg = build_registry(d)</span></span>
+<span class="line"><span>run_named("speculate_chat", "hello", d, reg)</span></span></code></pre>
+</div>
+  </section>
+
+  <section class="tool" id="select">
+    <h3 class="tool-cmd">select_graph</h3>
+    <p class="tool-desc">Optional helper: pick a registered graph from the prompt and what the directory actually has. It does not invent new topology.</p>
   </section>
 
     </article></main>

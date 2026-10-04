@@ -25,14 +25,14 @@ class _JsonFormatter(logging.Formatter):
         return json.dumps(payload, default=str)
 
 
-def setup_logging(*, level: str = "INFO", json_logs: bool = False) -> None:
+def setup_logging(*, level: str = "INFO", json_logs: bool = False, stream: Any = None) -> None:
     """Idempotent root logging for the mom process."""
     root = logging.getLogger()
     # Avoid duplicate handlers on reload
     if getattr(root, "_mom_configured", False):
         root.setLevel(level.upper())
         return
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler(stream or sys.stdout)
     if json_logs:
         handler.setFormatter(_JsonFormatter())
     else:

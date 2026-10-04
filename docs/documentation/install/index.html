@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Install · MoM Docs</title>
-  <meta name="description" content="Install MoM from the repo: Python, Rust, maturin, local HF weights." />
+  <meta name="description" content="Install the mom Python SDK from the repo." />
   <link rel="icon" href="../../assets/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +21,10 @@
       <nav>
         <a class="nav-link" href="../">Getting started</a>
 <a class="nav-link active" href="../install/">Install</a>
+<a class="nav-link" href="../cli/">CLI</a>
 <a class="nav-link" href="../sdk/">SDK</a>
 <a class="nav-link" href="../graphs/">Graphs</a>
 <a class="nav-link" href="../adapters/">Adapters</a>
-<a class="nav-link" href="../benches/">Benches</a>
 <a class="nav-link" href="../caveats/">Limits</a>
       </nav>
       <div class="sidebar-footer">
@@ -37,42 +37,38 @@
     <main class="docs-main"><article>
   <h1>Install</h1>
 
-  <p class="lead">Install from this repo. No PyPI package yet. Local models need torch + transformers.</p>
-  <div class="prereq"><span class="prereq-label">Prerequisite</span>Python ≥ 3.10 · Rust via rustup · Hugging Face weights or Hub access</div>
+  <p class="lead">The SDK is the <code class="chip">mom</code> package. Native graph runner is optional but built by default with maturin. No PyPI release yet.</p>
+  <div class="prereq"><span class="prereq-label">Prerequisite</span>Python ≥ 3.10 · Rust (rustup) for <code class="chip">mom._native</code></div>
 
   <section class="tool" id="venv">
-    <h3 class="tool-cmd">venv + build</h3>
-    <p class="tool-desc">From the repo root. <code class="chip">maturin develop</code> builds the Rust hot path into <code class="chip">mom._native</code>.</p>
+    <h3 class="tool-cmd">venv + maturin</h3>
+    <p class="tool-desc">From the repo root. Puts <code class="chip">import mom</code> and the <code class="chip">mom</code> CLI on your environment.</p>
     <div class="codeblock" data-shell="1">
   <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>git clone https://github.com/aquinlabs/mom.git &amp;&amp; cd mom</span></span>
-<span class="line"><span class="prompt">$</span><span>python3 -m venv .venv &amp;&amp; source .venv/bin/activate</span></span>
-<span class="line"><span class="prompt">$</span><span>pip install -r requirements.txt -r requirements-dev.txt -r requirements-local.txt</span></span>
+  <pre><code><span class="line"><span class="prompt">$</span><span>python3 -m venv .venv &amp;&amp; source .venv/bin/activate</span></span>
+<span class="line"><span class="prompt">$</span><span>pip install -r requirements.txt</span></span>
 <span class="line"><span class="prompt">$</span><span>maturin develop</span></span>
-<span class="line"><span class="prompt">$</span><span>mom-ping</span></span>
+<span class="line"><span class="prompt">$</span><span>mom version</span></span></code></pre>
+</div>
+  </section>
+
+  <section class="tool" id="local">
+    <h3 class="tool-cmd">Local model extras</h3>
+    <p class="tool-desc">Only if you use the bundled HF / torchvision adapters via <code class="chip">MoM()</code> / <code class="chip">build_directory()</code>.</p>
+    <div class="codeblock" data-shell="1">
+  <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
+  <pre><code><span class="line"><span class="prompt">$</span><span>pip install -r requirements-local.txt</span></span>
 <span class="line"><span class="prompt">$</span><span>cp -n .env.example .env</span></span></code></pre>
 </div>
   </section>
 
-  <section class="tool" id="env">
-    <h3 class="tool-cmd">Weights</h3>
-    <p class="tool-desc">Hub ids download under <code class="chip">MOM_WEIGHTS_DIR/hub/…</code>. Paths work too. Default chat pair is SmolLM2 135M / 360M.</p>
-    <div class="codeblock" data-shell="1">
-  <div class="codeblock-bar"><span>env</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>export MOM_BACKEND=local</span></span>
-<span class="line"><span class="prompt">$</span><span>export MOM_CHAT_FAST=HuggingFaceTB/SmolLM2-135M-Instruct</span></span>
-<span class="line"><span class="prompt">$</span><span>export MOM_CHAT_STRONG=HuggingFaceTB/SmolLM2-360M-Instruct</span></span>
-<span class="line"><span class="prompt">$</span><span>export MOM_VISION_CAPTION=Salesforce/blip-image-captioning-base</span></span>
-<span class="line"><span class="prompt">$</span><span>export MOM_VISION_TORCH=resnet18</span></span></code></pre>
-</div>
-  </section>
-
-  <section class="tool" id="check">
-    <h3 class="tool-cmd">Check</h3>
+  <section class="tool" id="cli">
+    <h3 class="tool-cmd">mom CLI</h3>
+    <p class="tool-desc">Same SDK, no Python file. See <a href="../cli/">CLI</a>. <code class="chip">mom-ping</code> and <code class="chip">mom-serve</code> still work as aliases.</p>
     <div class="codeblock" data-shell="1">
   <div class="codeblock-bar"><span>shell</span><button type="button" class="copy-btn">Copy</button></div>
-  <pre><code><span class="line"><span class="prompt">$</span><span>pytest -q</span></span>
-<span class="line"><span class="prompt">$</span><span>python scripts/helpers/examples/hello_mom.py</span></span></code></pre>
+  <pre><code><span class="line"><span class="prompt">$</span><span>mom doctor</span></span>
+<span class="line"><span class="prompt">$</span><span>mom serve</span></span></code></pre>
 </div>
   </section>
 
