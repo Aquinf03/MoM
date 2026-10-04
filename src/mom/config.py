@@ -47,6 +47,7 @@ def _env_int(name: str, default: int) -> int:
 _DEFAULT_FAST = "HuggingFaceTB/SmolLM2-135M-Instruct"
 _DEFAULT_STRONG = "HuggingFaceTB/SmolLM2-360M-Instruct"
 _DEFAULT_EMBED = "sentence-transformers/all-MiniLM-L6-v2"
+_DEFAULT_CAPTION = "Salesforce/blip-image-captioning-base"
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,8 @@ class Settings:
     chat_fast_source: str = _DEFAULT_FAST
     chat_strong_source: str = _DEFAULT_STRONG
     embed_source: str = _DEFAULT_EMBED
+    vision_caption_source: str = _DEFAULT_CAPTION
+    vision_torch_name: str = "resnet18"
     router_source: str | None = None  # None → heuristic-only router
     hf_token: str | None = None
     hf_revision: str | None = None
@@ -116,6 +119,8 @@ class Settings:
             chat_fast_source=_env("MOM_CHAT_FAST", _DEFAULT_FAST) or _DEFAULT_FAST,
             chat_strong_source=_env("MOM_CHAT_STRONG", _DEFAULT_STRONG) or _DEFAULT_STRONG,
             embed_source=_env("MOM_EMBED", _DEFAULT_EMBED) or _DEFAULT_EMBED,
+            vision_caption_source=_env("MOM_VISION_CAPTION", _DEFAULT_CAPTION) or _DEFAULT_CAPTION,
+            vision_torch_name=(_env("MOM_VISION_TORCH", "resnet18") or "resnet18").lower(),
             router_source=_env("MOM_ROUTER"),
             hf_token=_env("HF_TOKEN") or _env("HUGGING_FACE_HUB_TOKEN"),
             hf_revision=_env("MOM_HF_REVISION"),

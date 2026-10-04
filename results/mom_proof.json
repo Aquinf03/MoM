@@ -1,0 +1,1623 @@
+{
+  "overall": "WIN",
+  "arms": {
+    "mom": {
+      "name": "mom",
+      "n": 64,
+      "acc": 0.9375,
+      "easy_acc": 1.0,
+      "hard_acc": 0.75,
+      "p50": 93.17839599680156,
+      "easy_p50": 70.64349995926023,
+      "hard_p50": 344.690625439398,
+      "total_wall_ms": 11452.59137568064,
+      "orch_p50": 0.16556307673454285,
+      "hits": 48,
+      "misses": 16
+    },
+    "always_fast": {
+      "name": "always_fast",
+      "n": 64,
+      "acc": 0.8125,
+      "easy_acc": 1.0,
+      "hard_acc": 0.25,
+      "p50": 91.028354,
+      "easy_p50": 66.731646,
+      "hard_p50": 429.793979,
+      "total_wall_ms": 10763.135251,
+      "orch_p50": 0.010020499999995991,
+      "hits": 0,
+      "misses": 0
+    },
+    "always_strong": {
+      "name": "always_strong",
+      "n": 64,
+      "acc": 0.9375,
+      "easy_acc": 1.0,
+      "hard_acc": 0.75,
+      "p50": 171.6015625,
+      "easy_p50": 159.579,
+      "hard_p50": 317.8620625,
+      "total_wall_ms": 17083.614876,
+      "orch_p50": 0.008895499999979961,
+      "hits": 0,
+      "misses": 0
+    }
+  },
+  "checks": [
+    {
+      "name": "beat always_strong on easy speed (p50)",
+      "pass": true,
+      "detail": "mom=70.6ms  strong=159.6ms"
+    },
+    {
+      "name": "beat always_fast on hard accuracy",
+      "pass": true,
+      "detail": "mom=75%  fast=25%"
+    },
+    {
+      "name": "beat always_strong on total wall time (mixed set)",
+      "pass": true,
+      "detail": "mom=11453ms  strong=17084ms"
+    },
+    {
+      "name": "easy path actually hits fast",
+      "pass": true,
+      "detail": "48/48 hits"
+    },
+    {
+      "name": "hard path misses to strong",
+      "pass": true,
+      "detail": "16/16 misses"
+    },
+    {
+      "name": "orch not eating the win",
+      "pass": true,
+      "detail": "orch_p50=0.17ms"
+    }
+  ],
+  "rows": {
+    "mom": [
+      {
+        "id": "e1",
+        "diff": "easy",
+        "ms": 90.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "2 + 2 is 4."
+      },
+      {
+        "id": "e2",
+        "diff": "easy",
+        "ms": 57.5,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell cat."
+      },
+      {
+        "id": "e3",
+        "diff": "easy",
+        "ms": 87.1,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The answer is 7."
+      },
+      {
+        "id": "e4",
+        "diff": "easy",
+        "ms": 40.3,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e5",
+        "diff": "easy",
+        "ms": 99.1,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of apple is \"A\"."
+      },
+      {
+        "id": "e6",
+        "diff": "easy",
+        "ms": 39.7,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e7",
+        "diff": "easy",
+        "ms": 172.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The color of a clear daytime sky is a vivid and serene blue."
+      },
+      {
+        "id": "e8",
+        "diff": "easy",
+        "ms": 55.9,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell dog."
+      },
+      {
+        "id": "e9",
+        "diff": "easy",
+        "ms": 40.9,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e10",
+        "diff": "easy",
+        "ms": 42.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e11",
+        "diff": "easy",
+        "ms": 158.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell hat."
+      },
+      {
+        "id": "e12",
+        "diff": "easy",
+        "ms": 87.6,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e13",
+        "diff": "easy",
+        "ms": 173.6,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of banana is \"A\"."
+      },
+      {
+        "id": "e14",
+        "diff": "easy",
+        "ms": 60.9,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e15",
+        "diff": "easy",
+        "ms": 138.6,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell sun. One word."
+      },
+      {
+        "id": "e16",
+        "diff": "easy",
+        "ms": 72.5,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e17",
+        "diff": "easy",
+        "ms": 74.7,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell pig."
+      },
+      {
+        "id": "e18",
+        "diff": "easy",
+        "ms": 56.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e19",
+        "diff": "easy",
+        "ms": 179.5,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of the word \"dog\" is \"d\"."
+      },
+      {
+        "id": "e20",
+        "diff": "easy",
+        "ms": 89.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell red."
+      },
+      {
+        "id": "e21",
+        "diff": "easy",
+        "ms": 43.0,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e22",
+        "diff": "easy",
+        "ms": 106.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of the zoo is \"one\"."
+      },
+      {
+        "id": "e23",
+        "diff": "easy",
+        "ms": 266.7,
+        "ok": true,
+        "spec": "hit",
+        "pred": "A spell map is a set of words that spell out a word or phrase, often with a twist or a hint of a different meaning."
+      },
+      {
+        "id": "e24",
+        "diff": "easy",
+        "ms": 43.9,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "h1",
+        "diff": "hard",
+        "ms": 632.7,
+        "ok": true,
+        "spec": "miss",
+        "pred": "12 + 8 = 20\n20 * 3 = 60\n60 - 10 = 50"
+      },
+      {
+        "id": "h2",
+        "diff": "hard",
+        "ms": 1245.8,
+        "ok": true,
+        "spec": "miss",
+        "pred": "Mary has 3 apples.\n\nJohn has 4 more apples than Mary, so John has 3 + 4 = 7 apples.\n\nTogether, they have 3 + 7 = 10 apples.\n\n#### 10\n\nThe answer is: 10"
+      },
+      {
+        "id": "h3",
+        "diff": "hard",
+        "ms": 896.9,
+        "ok": true,
+        "spec": "miss",
+        "pred": "Tom is 3 years older than Ana.\n\nAna is 10 years old.\n\nTom is 3 years older than Ana.\n\nTom is 10 + 3 = 13 years old.\n\nThe answer is: 13"
+      },
+      {
+        "id": "h4",
+        "diff": "hard",
+        "ms": 292.2,
+        "ok": true,
+        "spec": "miss",
+        "pred": "25 + 17 = 42."
+      },
+      {
+        "id": "h5",
+        "diff": "hard",
+        "ms": 202.2,
+        "ok": false,
+        "spec": "miss",
+        "pred": "30 - 11 = 29"
+      },
+      {
+        "id": "h6",
+        "diff": "hard",
+        "ms": 205.4,
+        "ok": false,
+        "spec": "miss",
+        "pred": "Sam has 2 stickers more than Lea."
+      },
+      {
+        "id": "h7",
+        "diff": "hard",
+        "ms": 166.0,
+        "ok": true,
+        "spec": "miss",
+        "pred": "14 + 19 = 33"
+      },
+      {
+        "id": "h8",
+        "diff": "hard",
+        "ms": 397.2,
+        "ok": true,
+        "spec": "miss",
+        "pred": "Mia has 7 cards. She gives 2 away, so she has 7 - 2 = 5 cards left."
+      },
+      {
+        "id": "e1",
+        "diff": "easy",
+        "ms": 96.0,
+        "ok": true,
+        "spec": "hit",
+        "pred": "2 + 2 is 4."
+      },
+      {
+        "id": "e2",
+        "diff": "easy",
+        "ms": 61.9,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell cat."
+      },
+      {
+        "id": "e3",
+        "diff": "easy",
+        "ms": 79.7,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The answer is 7."
+      },
+      {
+        "id": "e4",
+        "diff": "easy",
+        "ms": 44.2,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e5",
+        "diff": "easy",
+        "ms": 101.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of apple is \"A\"."
+      },
+      {
+        "id": "e6",
+        "diff": "easy",
+        "ms": 39.2,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e7",
+        "diff": "easy",
+        "ms": 141.2,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The color of a clear daytime sky is a vivid and serene blue."
+      },
+      {
+        "id": "e8",
+        "diff": "easy",
+        "ms": 55.9,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell dog."
+      },
+      {
+        "id": "e9",
+        "diff": "easy",
+        "ms": 51.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e10",
+        "diff": "easy",
+        "ms": 45.1,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e11",
+        "diff": "easy",
+        "ms": 61.3,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell hat."
+      },
+      {
+        "id": "e12",
+        "diff": "easy",
+        "ms": 39.3,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e13",
+        "diff": "easy",
+        "ms": 111.5,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of banana is \"A\"."
+      },
+      {
+        "id": "e14",
+        "diff": "easy",
+        "ms": 68.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e15",
+        "diff": "easy",
+        "ms": 80.7,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell sun. One word."
+      },
+      {
+        "id": "e16",
+        "diff": "easy",
+        "ms": 41.6,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e17",
+        "diff": "easy",
+        "ms": 56.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell pig."
+      },
+      {
+        "id": "e18",
+        "diff": "easy",
+        "ms": 39.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e19",
+        "diff": "easy",
+        "ms": 131.1,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of the word \"dog\" is \"d\"."
+      },
+      {
+        "id": "e20",
+        "diff": "easy",
+        "ms": 106.4,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Spell red."
+      },
+      {
+        "id": "e21",
+        "diff": "easy",
+        "ms": 39.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "e22",
+        "diff": "easy",
+        "ms": 122.8,
+        "ok": true,
+        "spec": "hit",
+        "pred": "The first letter of the zoo is \"one\"."
+      },
+      {
+        "id": "e23",
+        "diff": "easy",
+        "ms": 256.0,
+        "ok": true,
+        "spec": "hit",
+        "pred": "A spell map is a set of words that spell out a word or phrase, often with a twist or a hint of a different meaning."
+      },
+      {
+        "id": "e24",
+        "diff": "easy",
+        "ms": 41.0,
+        "ok": true,
+        "spec": "hit",
+        "pred": "Yes."
+      },
+      {
+        "id": "h1",
+        "diff": "hard",
+        "ms": 444.5,
+        "ok": true,
+        "spec": "miss",
+        "pred": "12 + 8 = 20\n20 * 3 = 60\n60 - 10 = 50"
+      },
+      {
+        "id": "h2",
+        "diff": "hard",
+        "ms": 846.0,
+        "ok": true,
+        "spec": "miss",
+        "pred": "Mary has 3 apples.\n\nJohn has 4 more apples than Mary, so John has 3 + 4 = 7 apples.\n\nTogether, they have 3 + 7 = 10 apples.\n\n#### 10\n\nThe answer is: 10"
+      },
+      {
+        "id": "h3",
+        "diff": "hard",
+        "ms": 814.6,
+        "ok": true,
+        "spec": "miss",
+        "pred": "Tom is 3 years older than Ana.\n\nAna is 10 years old.\n\nTom is 3 years older than Ana.\n\nTom is 10 + 3 = 13 years old.\n\nThe answer is: 13"
+      },
+      {
+        "id": "h4",
+        "diff": "hard",
+        "ms": 181.4,
+        "ok": true,
+        "spec": "miss",
+        "pred": "25 + 17 = 42."
+      },
+      {
+        "id": "h5",
+        "diff": "hard",
+        "ms": 168.2,
+        "ok": false,
+        "spec": "miss",
+        "pred": "30 - 11 = 29"
+      },
+      {
+        "id": "h6",
+        "diff": "hard",
+        "ms": 164.3,
+        "ok": false,
+        "spec": "miss",
+        "pred": "Sam has 2 stickers more than Lea."
+      },
+      {
+        "id": "h7",
+        "diff": "hard",
+        "ms": 177.9,
+        "ok": true,
+        "spec": "miss",
+        "pred": "14 + 19 = 33"
+      },
+      {
+        "id": "h8",
+        "diff": "hard",
+        "ms": 425.7,
+        "ok": true,
+        "spec": "miss",
+        "pred": "Mia has 7 cards. She gives 2 away, so she has 7 - 2 = 5 cards left."
+      }
+    ],
+    "always_fast": [
+      {
+        "id": "e1",
+        "diff": "easy",
+        "ms": 91.4,
+        "ok": true,
+        "spec": null,
+        "pred": "2 + 2 is 4."
+      },
+      {
+        "id": "e2",
+        "diff": "easy",
+        "ms": 55.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell cat."
+      },
+      {
+        "id": "e3",
+        "diff": "easy",
+        "ms": 77.4,
+        "ok": true,
+        "spec": null,
+        "pred": "The answer is 7."
+      },
+      {
+        "id": "e4",
+        "diff": "easy",
+        "ms": 39.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e5",
+        "diff": "easy",
+        "ms": 97.5,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of apple is \"A\"."
+      },
+      {
+        "id": "e6",
+        "diff": "easy",
+        "ms": 39.2,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e7",
+        "diff": "easy",
+        "ms": 139.0,
+        "ok": true,
+        "spec": null,
+        "pred": "The color of a clear daytime sky is a vivid and serene blue."
+      },
+      {
+        "id": "e8",
+        "diff": "easy",
+        "ms": 56.6,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell dog."
+      },
+      {
+        "id": "e9",
+        "diff": "easy",
+        "ms": 55.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e10",
+        "diff": "easy",
+        "ms": 38.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e11",
+        "diff": "easy",
+        "ms": 228.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell hat."
+      },
+      {
+        "id": "e12",
+        "diff": "easy",
+        "ms": 69.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e13",
+        "diff": "easy",
+        "ms": 400.5,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of banana is \"A\"."
+      },
+      {
+        "id": "e14",
+        "diff": "easy",
+        "ms": 53.3,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e15",
+        "diff": "easy",
+        "ms": 127.4,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell sun. One word."
+      },
+      {
+        "id": "e16",
+        "diff": "easy",
+        "ms": 63.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e17",
+        "diff": "easy",
+        "ms": 365.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell pig."
+      },
+      {
+        "id": "e18",
+        "diff": "easy",
+        "ms": 58.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e19",
+        "diff": "easy",
+        "ms": 172.7,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the word \"dog\" is \"d\"."
+      },
+      {
+        "id": "e20",
+        "diff": "easy",
+        "ms": 79.5,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell red."
+      },
+      {
+        "id": "e21",
+        "diff": "easy",
+        "ms": 41.0,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e22",
+        "diff": "easy",
+        "ms": 108.2,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the zoo is \"one\"."
+      },
+      {
+        "id": "e23",
+        "diff": "easy",
+        "ms": 347.4,
+        "ok": true,
+        "spec": null,
+        "pred": "A spell map is a set of words that spell out a word or phrase, often with a twist or a hint of a different meaning."
+      },
+      {
+        "id": "e24",
+        "diff": "easy",
+        "ms": 46.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "h1",
+        "diff": "hard",
+        "ms": 457.0,
+        "ok": false,
+        "spec": null,
+        "pred": "To compute (12+8)*3-10, we first need to add 12 and 8, which gives us 12+8=14. Then, we subtract 10 from 14"
+      },
+      {
+        "id": "h2",
+        "diff": "hard",
+        "ms": 570.5,
+        "ok": false,
+        "spec": null,
+        "pred": "John has 4 more apples than Mary.\nMary has 3 apples.\nThey have together 4 + 3 = 7 apples.\n#### 7\nThe answer is: 7"
+      },
+      {
+        "id": "h3",
+        "diff": "hard",
+        "ms": 607.4,
+        "ok": false,
+        "spec": null,
+        "pred": "Tom is 10 years older than Ana.\n\nReason: 1. The answer is 10.\n\nReason: 2. The answer is 10.\n\nReason: 3. The answer is"
+      },
+      {
+        "id": "h4",
+        "diff": "hard",
+        "ms": 529.2,
+        "ok": false,
+        "spec": null,
+        "pred": "To compute 25+17, we first add 25 and 17, which equals 32. Then, we subtract 32 from 25, resulting in 17. Therefore, the final"
+      },
+      {
+        "id": "h5",
+        "diff": "hard",
+        "ms": 100.7,
+        "ok": false,
+        "spec": null,
+        "pred": "30-11 = 21"
+      },
+      {
+        "id": "h6",
+        "diff": "hard",
+        "ms": 274.5,
+        "ok": true,
+        "spec": null,
+        "pred": "Lea has 6 stickers. Sam has 2 more than Lea, so Sam has 6 + 2 = 8 stickers."
+      },
+      {
+        "id": "h7",
+        "diff": "hard",
+        "ms": 441.4,
+        "ok": false,
+        "spec": null,
+        "pred": "To compute 14 + 19, we first add the two numbers: 14 + 19 = 23. Then, we subtract 23 from 14 to get 13. Finally,"
+      },
+      {
+        "id": "h8",
+        "diff": "hard",
+        "ms": 254.2,
+        "ok": true,
+        "spec": null,
+        "pred": "Mia has 7 cards. She gives 2 away, so she has 7 - 2 = 5 cards left."
+      },
+      {
+        "id": "e1",
+        "diff": "easy",
+        "ms": 90.6,
+        "ok": true,
+        "spec": null,
+        "pred": "2 + 2 is 4."
+      },
+      {
+        "id": "e2",
+        "diff": "easy",
+        "ms": 56.0,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell cat."
+      },
+      {
+        "id": "e3",
+        "diff": "easy",
+        "ms": 75.6,
+        "ok": true,
+        "spec": null,
+        "pred": "The answer is 7."
+      },
+      {
+        "id": "e4",
+        "diff": "easy",
+        "ms": 40.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e5",
+        "diff": "easy",
+        "ms": 99.0,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of apple is \"A\"."
+      },
+      {
+        "id": "e6",
+        "diff": "easy",
+        "ms": 41.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e7",
+        "diff": "easy",
+        "ms": 144.4,
+        "ok": true,
+        "spec": null,
+        "pred": "The color of a clear daytime sky is a vivid and serene blue."
+      },
+      {
+        "id": "e8",
+        "diff": "easy",
+        "ms": 55.6,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell dog."
+      },
+      {
+        "id": "e9",
+        "diff": "easy",
+        "ms": 54.2,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e10",
+        "diff": "easy",
+        "ms": 41.0,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e11",
+        "diff": "easy",
+        "ms": 55.3,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell hat."
+      },
+      {
+        "id": "e12",
+        "diff": "easy",
+        "ms": 39.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e13",
+        "diff": "easy",
+        "ms": 115.1,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of banana is \"A\"."
+      },
+      {
+        "id": "e14",
+        "diff": "easy",
+        "ms": 69.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e15",
+        "diff": "easy",
+        "ms": 83.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell sun. One word."
+      },
+      {
+        "id": "e16",
+        "diff": "easy",
+        "ms": 39.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e17",
+        "diff": "easy",
+        "ms": 55.4,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell pig."
+      },
+      {
+        "id": "e18",
+        "diff": "easy",
+        "ms": 41.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e19",
+        "diff": "easy",
+        "ms": 132.4,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the word \"dog\" is \"d\"."
+      },
+      {
+        "id": "e20",
+        "diff": "easy",
+        "ms": 72.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell red."
+      },
+      {
+        "id": "e21",
+        "diff": "easy",
+        "ms": 41.4,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e22",
+        "diff": "easy",
+        "ms": 106.5,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the zoo is \"one\"."
+      },
+      {
+        "id": "e23",
+        "diff": "easy",
+        "ms": 257.3,
+        "ok": true,
+        "spec": null,
+        "pred": "A spell map is a set of words that spell out a word or phrase, often with a twist or a hint of a different meaning."
+      },
+      {
+        "id": "e24",
+        "diff": "easy",
+        "ms": 41.6,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "h1",
+        "diff": "hard",
+        "ms": 428.6,
+        "ok": false,
+        "spec": null,
+        "pred": "To compute (12+8)*3-10, we first need to add 12 and 8, which gives us 12+8=14. Then, we subtract 10 from 14"
+      },
+      {
+        "id": "h2",
+        "diff": "hard",
+        "ms": 431.0,
+        "ok": false,
+        "spec": null,
+        "pred": "John has 4 more apples than Mary.\nMary has 3 apples.\nThey have together 4 + 3 = 7 apples.\n#### 7\nThe answer is: 7"
+      },
+      {
+        "id": "h3",
+        "diff": "hard",
+        "ms": 446.2,
+        "ok": false,
+        "spec": null,
+        "pred": "Tom is 10 years older than Ana.\n\nReason: 1. The answer is 10.\n\nReason: 2. The answer is 10.\n\nReason: 3. The answer is"
+      },
+      {
+        "id": "h4",
+        "diff": "hard",
+        "ms": 410.0,
+        "ok": false,
+        "spec": null,
+        "pred": "To compute 25+17, we first add 25 and 17, which equals 32. Then, we subtract 32 from 25, resulting in 17. Therefore, the final"
+      },
+      {
+        "id": "h5",
+        "diff": "hard",
+        "ms": 112.2,
+        "ok": false,
+        "spec": null,
+        "pred": "30-11 = 21"
+      },
+      {
+        "id": "h6",
+        "diff": "hard",
+        "ms": 266.4,
+        "ok": true,
+        "spec": null,
+        "pred": "Lea has 6 stickers. Sam has 2 more than Lea, so Sam has 6 + 2 = 8 stickers."
+      },
+      {
+        "id": "h7",
+        "diff": "hard",
+        "ms": 471.6,
+        "ok": false,
+        "spec": null,
+        "pred": "To compute 14 + 19, we first add the two numbers: 14 + 19 = 23. Then, we subtract 23 from 14 to get 13. Finally,"
+      },
+      {
+        "id": "h8",
+        "diff": "hard",
+        "ms": 258.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Mia has 7 cards. She gives 2 away, so she has 7 - 2 = 5 cards left."
+      }
+    ],
+    "always_strong": [
+      {
+        "id": "e1",
+        "diff": "easy",
+        "ms": 115.3,
+        "ok": true,
+        "spec": null,
+        "pred": "2+2 = 4"
+      },
+      {
+        "id": "e2",
+        "diff": "easy",
+        "ms": 199.6,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"cat\" is spelled as \"cat.\""
+      },
+      {
+        "id": "e3",
+        "diff": "easy",
+        "ms": 156.7,
+        "ok": true,
+        "spec": null,
+        "pred": "There are 7 days in a week."
+      },
+      {
+        "id": "e4",
+        "diff": "easy",
+        "ms": 63.6,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e5",
+        "diff": "easy",
+        "ms": 163.9,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the apple is \"a\"."
+      },
+      {
+        "id": "e6",
+        "diff": "easy",
+        "ms": 78.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e7",
+        "diff": "easy",
+        "ms": 381.8,
+        "ok": true,
+        "spec": null,
+        "pred": "The color of a clear daytime sky is typically a deep shade of blue, often described as a deep shade of indigo or navy blue."
+      },
+      {
+        "id": "e8",
+        "diff": "easy",
+        "ms": 62.4,
+        "ok": true,
+        "spec": null,
+        "pred": "Dog."
+      },
+      {
+        "id": "e9",
+        "diff": "easy",
+        "ms": 504.4,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes. Fire is a form of thermal energy that is generated by the rapid combustion of fuel, such as wood, coal, or other organic materials, releasing heat and ligh"
+      },
+      {
+        "id": "e10",
+        "diff": "easy",
+        "ms": 73.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e11",
+        "diff": "easy",
+        "ms": 572.4,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"hat\" is spelled \"hat\"."
+      },
+      {
+        "id": "e12",
+        "diff": "easy",
+        "ms": 974.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes. Snow is white due to the presence of tiny ice crystals and water droplets in its composition."
+      },
+      {
+        "id": "e13",
+        "diff": "easy",
+        "ms": 208.6,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the banana is \"a\"."
+      },
+      {
+        "id": "e14",
+        "diff": "easy",
+        "ms": 839.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes. Grass is green due to the presence of a pigment called chlorophyll, which absorbs light in the blue and red wavelengths but reflects green light."
+      },
+      {
+        "id": "e15",
+        "diff": "easy",
+        "ms": 275.7,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"sun\" is spelled \"sun\"."
+      },
+      {
+        "id": "e16",
+        "diff": "easy",
+        "ms": 94.3,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e17",
+        "diff": "easy",
+        "ms": 237.4,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"pig\" is spelled as \"pig\"."
+      },
+      {
+        "id": "e18",
+        "diff": "easy",
+        "ms": 90.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e19",
+        "diff": "easy",
+        "ms": 219.8,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the word \"dog\" is \"d\"."
+      },
+      {
+        "id": "e20",
+        "diff": "easy",
+        "ms": 54.6,
+        "ok": true,
+        "spec": null,
+        "pred": "Red"
+      },
+      {
+        "id": "e21",
+        "diff": "easy",
+        "ms": 61.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e22",
+        "diff": "easy",
+        "ms": 162.5,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the zoo is Z."
+      },
+      {
+        "id": "e23",
+        "diff": "easy",
+        "ms": 136.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell map. One word."
+      },
+      {
+        "id": "e24",
+        "diff": "easy",
+        "ms": 90.0,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "h1",
+        "diff": "hard",
+        "ms": 653.0,
+        "ok": true,
+        "spec": null,
+        "pred": "12 + 8 = 20\n20 * 3 = 60\n60 - 10 = 50"
+      },
+      {
+        "id": "h2",
+        "diff": "hard",
+        "ms": 939.0,
+        "ok": true,
+        "spec": null,
+        "pred": "Mary has 3 apples.\n\nJohn has 4 more apples than Mary, so John has 3 + 4 = 7 apples.\n\nTogether, they have 3 + 7 = 10 apples.\n\n#### 10\n\nThe answer is: 10"
+      },
+      {
+        "id": "h3",
+        "diff": "hard",
+        "ms": 1016.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Tom is 3 years older than Ana.\n\nAna is 10 years old.\n\nTom is 3 years older than Ana.\n\nTom is 10 + 3 = 13 years old.\n\nThe answer is: 13"
+      },
+      {
+        "id": "h4",
+        "diff": "hard",
+        "ms": 250.8,
+        "ok": true,
+        "spec": null,
+        "pred": "25 + 17 = 42."
+      },
+      {
+        "id": "h5",
+        "diff": "hard",
+        "ms": 175.1,
+        "ok": false,
+        "spec": null,
+        "pred": "30 - 11 = 29"
+      },
+      {
+        "id": "h6",
+        "diff": "hard",
+        "ms": 178.5,
+        "ok": false,
+        "spec": null,
+        "pred": "Sam has 2 stickers more than Lea."
+      },
+      {
+        "id": "h7",
+        "diff": "hard",
+        "ms": 168.6,
+        "ok": true,
+        "spec": null,
+        "pred": "14 + 19 = 33"
+      },
+      {
+        "id": "h8",
+        "diff": "hard",
+        "ms": 384.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Mia has 7 cards. She gives 2 away, so she has 7 - 2 = 5 cards left."
+      },
+      {
+        "id": "e1",
+        "diff": "easy",
+        "ms": 117.8,
+        "ok": true,
+        "spec": null,
+        "pred": "2+2 = 4"
+      },
+      {
+        "id": "e2",
+        "diff": "easy",
+        "ms": 205.7,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"cat\" is spelled as \"cat.\""
+      },
+      {
+        "id": "e3",
+        "diff": "easy",
+        "ms": 172.5,
+        "ok": true,
+        "spec": null,
+        "pred": "There are 7 days in a week."
+      },
+      {
+        "id": "e4",
+        "diff": "easy",
+        "ms": 66.2,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e5",
+        "diff": "easy",
+        "ms": 170.7,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the apple is \"a\"."
+      },
+      {
+        "id": "e6",
+        "diff": "easy",
+        "ms": 62.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e7",
+        "diff": "easy",
+        "ms": 411.1,
+        "ok": true,
+        "spec": null,
+        "pred": "The color of a clear daytime sky is typically a deep shade of blue, often described as a deep shade of indigo or navy blue."
+      },
+      {
+        "id": "e8",
+        "diff": "easy",
+        "ms": 62.5,
+        "ok": true,
+        "spec": null,
+        "pred": "Dog."
+      },
+      {
+        "id": "e9",
+        "diff": "easy",
+        "ms": 642.6,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes. Fire is a form of thermal energy that is generated by the rapid combustion of fuel, such as wood, coal, or other organic materials, releasing heat and ligh"
+      },
+      {
+        "id": "e10",
+        "diff": "easy",
+        "ms": 70.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e11",
+        "diff": "easy",
+        "ms": 167.0,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"hat\" is spelled \"hat\"."
+      },
+      {
+        "id": "e12",
+        "diff": "easy",
+        "ms": 315.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes. Snow is white due to the presence of tiny ice crystals and water droplets in its composition."
+      },
+      {
+        "id": "e13",
+        "diff": "easy",
+        "ms": 186.0,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the banana is \"a\"."
+      },
+      {
+        "id": "e14",
+        "diff": "easy",
+        "ms": 504.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes. Grass is green due to the presence of a pigment called chlorophyll, which absorbs light in the blue and red wavelengths but reflects green light."
+      },
+      {
+        "id": "e15",
+        "diff": "easy",
+        "ms": 169.2,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"sun\" is spelled \"sun\"."
+      },
+      {
+        "id": "e16",
+        "diff": "easy",
+        "ms": 62.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e17",
+        "diff": "easy",
+        "ms": 177.8,
+        "ok": true,
+        "spec": null,
+        "pred": "The word \"pig\" is spelled as \"pig\"."
+      },
+      {
+        "id": "e18",
+        "diff": "easy",
+        "ms": 61.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e19",
+        "diff": "easy",
+        "ms": 222.9,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the word \"dog\" is \"d\"."
+      },
+      {
+        "id": "e20",
+        "diff": "easy",
+        "ms": 49.2,
+        "ok": true,
+        "spec": null,
+        "pred": "Red"
+      },
+      {
+        "id": "e21",
+        "diff": "easy",
+        "ms": 66.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "e22",
+        "diff": "easy",
+        "ms": 155.8,
+        "ok": true,
+        "spec": null,
+        "pred": "The first letter of the zoo is Z."
+      },
+      {
+        "id": "e23",
+        "diff": "easy",
+        "ms": 136.1,
+        "ok": true,
+        "spec": null,
+        "pred": "Spell map. One word."
+      },
+      {
+        "id": "e24",
+        "diff": "easy",
+        "ms": 64.9,
+        "ok": true,
+        "spec": null,
+        "pred": "Yes."
+      },
+      {
+        "id": "h1",
+        "diff": "hard",
+        "ms": 435.9,
+        "ok": true,
+        "spec": null,
+        "pred": "12 + 8 = 20\n20 * 3 = 60\n60 - 10 = 50"
+      },
+      {
+        "id": "h2",
+        "diff": "hard",
+        "ms": 858.8,
+        "ok": true,
+        "spec": null,
+        "pred": "Mary has 3 apples.\n\nJohn has 4 more apples than Mary, so John has 3 + 4 = 7 apples.\n\nTogether, they have 3 + 7 = 10 apples.\n\n#### 10\n\nThe answer is: 10"
+      },
+      {
+        "id": "h3",
+        "diff": "hard",
+        "ms": 791.7,
+        "ok": true,
+        "spec": null,
+        "pred": "Tom is 3 years older than Ana.\n\nAna is 10 years old.\n\nTom is 3 years older than Ana.\n\nTom is 10 + 3 = 13 years old.\n\nThe answer is: 13"
+      },
+      {
+        "id": "h4",
+        "diff": "hard",
+        "ms": 179.5,
+        "ok": true,
+        "spec": null,
+        "pred": "25 + 17 = 42."
+      },
+      {
+        "id": "h5",
+        "diff": "hard",
+        "ms": 167.3,
+        "ok": false,
+        "spec": null,
+        "pred": "30 - 11 = 29"
+      },
+      {
+        "id": "h6",
+        "diff": "hard",
+        "ms": 164.9,
+        "ok": false,
+        "spec": null,
+        "pred": "Sam has 2 stickers more than Lea."
+      },
+      {
+        "id": "h7",
+        "diff": "hard",
+        "ms": 173.0,
+        "ok": true,
+        "spec": null,
+        "pred": "14 + 19 = 33"
+      },
+      {
+        "id": "h8",
+        "diff": "hard",
+        "ms": 404.5,
+        "ok": true,
+        "spec": null,
+        "pred": "Mia has 7 cards. She gives 2 away, so she has 7 - 2 = 5 cards left."
+      }
+    ]
+  }
+}

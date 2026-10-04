@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -13,6 +14,19 @@ from mom.turn import get_messages
 from mom.util_text import as_text_light
 from mom.weights import resolve_source
 
+_METER_LOCK = threading.Lock()
+_METER: dict[str, int] = {}
+
+
+def reset_token_meter() -> None:
+    with _METER_LOCK:
+        _METER.clear()
+
+
+def token_meter_snapshot() -> dict[str, int]:
+    with _METER_LOCK:
+        return dict(_METER)
+
 
 class _CausalLike(Protocol):
     def generate(
@@ -22,6 +36,14 @@ class _CausalLike(Protocol):
         max_new_tokens: int | None = None,
         cancel: Any = None,
     ) -> str: ...
+
+    def generate_stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        max_new_tokens: int | None = None,
+        cancel: Any = None,
+    ): ...
 
 
 class LocalChatModel:
@@ -89,11 +111,14 @@ class LocalChatModel:
         if cancel is not None:
             cancel.check()
         messages = _build_messages(input, state, system=self.system)
-        text = self._get_engine().generate(
+        engine = self._get_engine()
+        text = engine.generate(
             messages,
             max_new_tokens=self._max_new_tokens or self.settings.max_new_tokens,
             cancel=cancel,
         )
+        n_tokens = int(getattr(engine, "last_new_tokens", 0) or 0)
+        _add_tokens(state, self.model_id, n_tokens)
         weights = str(self._path) if self._path is not None else self.source
         state.set("last_model", self.model_id)
         state.set("weights_path", weights)
@@ -103,7 +128,56 @@ class LocalChatModel:
             "source": self.source,
             "weights": weights,
             "backend": "local",
+            "new_tokens": n_tokens,
         }
+
+    def stream(
+        self,
+        input: Any,
+        state: StateStore,
+        cancel: CancelToken | None = None,
+    ):
+        """Yield text pieces. Same prompt construction as `run`."""
+        if cancel is not None:
+            cancel.check()
+        messages = _build_messages(input, state, system=self.system)
+        engine = self._get_engine()
+        stream = getattr(engine, "generate_stream", None)
+        if stream is None:
+            yield engine.generate(
+                messages,
+                max_new_tokens=self._max_new_tokens or self.settings.max_new_tokens,
+                cancel=cancel,
+            )
+            return
+        for piece in stream(
+            messages,
+            max_new_tokens=self._max_new_tokens or self.settings.max_new_tokens,
+            cancel=cancel,
+        ):
+            yield piece
+
+
+def _add_tokens(state: StateStore, model_id: str, n: int) -> None:
+    n = int(n or 0)
+    with _METER_LOCK:
+        _METER[model_id] = int(_METER.get(model_id) or 0) + n
+    prev = state.get("new_tokens") or 0
+    try:
+        prev_i = int(prev)
+    except (TypeError, ValueError):
+        prev_i = 0
+    try:
+        state.set("new_tokens", prev_i + n)
+        key = f"tok:{model_id}"
+        cur = state.get(key) or 0
+        try:
+            cur_i = int(cur)
+        except (TypeError, ValueError):
+            cur_i = 0
+        state.set(key, cur_i + n)
+    except Exception:
+        pass
 
 
 def _build_messages(input: Any, state: StateStore, *, system: str | None) -> list[dict[str, str]]:

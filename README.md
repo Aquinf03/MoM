@@ -76,12 +76,7 @@ python scripts/helpers/bench/done_means.py
 
 ## Docs
 
-| Doc | |
-| --- | --- |
-| [`docs/production.md`](./docs/production.md) | Deploy, env, HTTP, Docker |
-| [`docs/adapter_guide.md`](./docs/adapter_guide.md) | Add a model |
-| [`docs/latency_hide.md`](./docs/latency_hide.md) | What can hide latency |
-| [`docs/concepts.md`](./docs/concepts.md) | Guarantees / non-guarantees |
+Open [`docs/documentation/`](./docs/documentation/) (same layout as other Aquin Labs docs). Markdown notes remain next to it (`concepts.md`, `adapter_guide.md`, …).
 
 ## Out of scope (for now)
 

@@ -1,0 +1,226 @@
+{
+  "tallies": {
+    "caption_chat": {
+      "n": 5,
+      "ok": 5,
+      "ms": 1411.2228751182556
+    },
+    "caption_strong": {
+      "n": 5,
+      "ok": 4,
+      "ms": 1301.5777918044478
+    },
+    "torch_chat": {
+      "n": 5,
+      "ok": 2,
+      "ms": 1020.7730827387422
+    },
+    "torch_strong": {
+      "n": 5,
+      "ok": 3,
+      "ms": 1039.1544590238482
+    }
+  },
+  "rows": [
+    {
+      "id": "red",
+      "arm": "caption_chat",
+      "ms": 283.78791688010097,
+      "ok": true,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "The image is a red background with a white border."
+    },
+    {
+      "id": "red",
+      "arm": "caption_strong",
+      "ms": 196.6570420190692,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "Red"
+    },
+    {
+      "id": "red",
+      "arm": "torch_chat",
+      "ms": 117.22633289173245,
+      "ok": false,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "The color is \"violet\"."
+    },
+    {
+      "id": "red",
+      "arm": "torch_strong",
+      "ms": 209.67804198153317,
+      "ok": false,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "The color of this object is black."
+    },
+    {
+      "id": "blue",
+      "arm": "caption_chat",
+      "ms": 336.64299990050495,
+      "ok": true,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "The image is a blue background with a white border."
+    },
+    {
+      "id": "blue",
+      "arm": "caption_strong",
+      "ms": 216.11574990674853,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "Blue"
+    },
+    {
+      "id": "blue",
+      "arm": "torch_chat",
+      "ms": 422.8609998244792,
+      "ok": false,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "This is a deep learning model that is capable of recognizing and classifying objects in images. It has a high accuracy in classifying objects based on their col"
+    },
+    {
+      "id": "blue",
+      "arm": "torch_strong",
+      "ms": 225.99154198542237,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "The color of this image is blue."
+    },
+    {
+      "id": "green",
+      "arm": "caption_chat",
+      "ms": 346.3092080783099,
+      "ok": true,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "The image is a white background with a green screen."
+    },
+    {
+      "id": "green",
+      "arm": "caption_strong",
+      "ms": 362.38695797510445,
+      "ok": false,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "The color of the image is white."
+    },
+    {
+      "id": "green",
+      "arm": "torch_chat",
+      "ms": 128.02354199811816,
+      "ok": false,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "The color is a shade of blue."
+    },
+    {
+      "id": "green",
+      "arm": "torch_strong",
+      "ms": 158.9180000592023,
+      "ok": false,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "The color of this object is brown."
+    },
+    {
+      "id": "circle",
+      "arm": "caption_chat",
+      "ms": 187.1190001256764,
+      "ok": true,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "Yes."
+    },
+    {
+      "id": "circle",
+      "arm": "caption_strong",
+      "ms": 289.92624999955297,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "Yes, there is a circle."
+    },
+    {
+      "id": "circle",
+      "arm": "torch_chat",
+      "ms": 68.17370792850852,
+      "ok": true,
+      "spec": "hit",
+      "caption": null,
+      "vision_top": null,
+      "pred": "Yes."
+    },
+    {
+      "id": "circle",
+      "arm": "torch_strong",
+      "ms": 196.1429170332849,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "Yes, there is a circle."
+    },
+    {
+      "id": "split",
+      "arm": "caption_chat",
+      "ms": 257.3637501336634,
+      "ok": true,
+      "spec": "miss",
+      "caption": null,
+      "vision_top": null,
+      "pred": "Red and Blue"
+    },
+    {
+      "id": "split",
+      "arm": "caption_strong",
+      "ms": 236.49179190397263,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "Red and Blue"
+    },
+    {
+      "id": "split",
+      "arm": "torch_chat",
+      "ms": 284.4885000959039,
+      "ok": true,
+      "spec": "miss",
+      "caption": null,
+      "vision_top": null,
+      "pred": "The two colors in this image are:\n\n- Red\n- Blue"
+    },
+    {
+      "id": "split",
+      "arm": "torch_strong",
+      "ms": 248.42395796440542,
+      "ok": true,
+      "spec": null,
+      "caption": null,
+      "vision_top": null,
+      "pred": "The two colors in this image are:\n\n- Red\n- Blue"
+    }
+  ]
+}
